@@ -18,8 +18,10 @@ import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.cache.SharedUserSessionRequestScopeCache;
 import ru.udya.sharedsession.config.RedisConfig;
 import ru.udya.sharedsession.exception.SharedSessionException;
+import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
 import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
@@ -48,15 +50,18 @@ public class RedisSharedUserSessionRepository
 
     public static final String KEY_PATTERN = "shared:session:%s";
 
+    protected SharedUserSessionRequestScopeCache sessionRequestScopeCache;
+
     protected RedisConfig redisConfig;
     protected RedisClient redisClient;
     protected RedisCodec<String, UserSession> objectRedisCodec;
     protected StatefulRedisConnection<String, UserSession> asyncRedisConnection;
 
-    public RedisSharedUserSessionRepository(RedisConfig redisConfig,
-                                            RedisClient redisClient) {
+    public RedisSharedUserSessionRepository(RedisConfig redisConfig, RedisClient redisClient,
+                                            SharedUserSessionRequestScopeCache sessionRequestScopeCache) {
         this.redisConfig = redisConfig;
         this.redisClient = redisClient;
+        this.sessionRequestScopeCache = sessionRequestScopeCache;
     }
 
     @PostConstruct
@@ -145,6 +150,8 @@ public class RedisSharedUserSessionRepository
                         .set(sessionKey, delegate)
                         .get();
 
+                sessionRequestScopeCache.saveUserSessionInCache(this);
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new SharedSessionPersistingException("Thread is interrupted by external process during persisting user session", e);
@@ -157,7 +164,7 @@ public class RedisSharedUserSessionRepository
             }
         }
 
-        protected void safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
+        protected UserSession safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
 
             try (StatefulRedisConnection<String, UserSession> writeConnection =
                          redisClient.connect(objectRedisCodec)) {
@@ -165,7 +172,12 @@ public class RedisSharedUserSessionRepository
                 RedisCommands<String, UserSession> sync = writeConnection.sync();
 
                 sync.watch(sessionKey);
+
                 UserSession sessionFromRedis = sync.get(sessionKey);
+                if (sessionFromRedis == null) {
+                    throw new SharedSessionNotFoundException(String.format("Session isn't found in Redis storage (Key: %s)", sessionKey));
+                }
+
                 RedisSharedUserSession updatedSharedUserSession =
                         new RedisSharedUserSession(sessionFromRedis, sessionKey);
 
@@ -178,9 +190,15 @@ public class RedisSharedUserSessionRepository
                 TransactionResult transactionResult = sync.exec();
                 if (transactionResult.wasDiscarded()) {
 
+                    sessionRequestScopeCache.removeUserSessionFromCache(this);
+
                     throw new SharedSessionOptimisticLockException(
                             "Session changes can't be saved to Redis because someone changes session in Redis during transaction");
                 }
+
+                sessionRequestScopeCache.saveUserSessionInCache(updatedSharedUserSession);
+
+                return updatedSharedUserSession;
             } catch (RedisCommandTimeoutException e) {
                 throw new SharedSessionTimeoutException(e);
             } catch (RedisException e) {
@@ -190,11 +208,17 @@ public class RedisSharedUserSessionRepository
 
         protected <T> T safeGettingValue(Function<RedisSharedUserSession, T> getter) {
             try {
-                UserSession sessionFromRedis = asyncRedisConnection.async()
-                        .get(sessionKey).get();
 
-                RedisSharedUserSession sharedUserSession =
-                        new RedisSharedUserSession(sessionFromRedis, sessionKey);
+                RedisSharedUserSession sharedUserSession = sessionRequestScopeCache
+                        .getUserSessionFromCacheBySessionKey(this.sessionKey);
+
+                if (sharedUserSession == null) {
+                    UserSession userSession = asyncRedisConnection.async()
+                            .get(sessionKey).get();
+                    sharedUserSession = new RedisSharedUserSession(userSession, sessionKey);
+
+                    sessionRequestScopeCache.saveUserSessionInCache(sharedUserSession);
+                }
 
                 return getter.apply(sharedUserSession);
             } catch (InterruptedException e) {
