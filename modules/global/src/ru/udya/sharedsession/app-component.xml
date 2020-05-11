@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<app-component xmlns="http://schemas.haulmont.com/cuba/app-component.xsd"
+               dependsOn="com.haulmont.cuba">
+
+    <module name="global" blocks="*">
+        <artifact name="ss-global" appJar="true"/>
+
+        <property name="cuba.persistenceConfig" value="+ru/udya/sharedsession/persistence.xml"/>
+        <property name="cuba.metadataConfig" value="+ru/udya/sharedsession/metadata.xml"/>
+        <property name="cuba.viewsConfig" value="+ru/udya/sharedsession/views.xml"/>
+    </module>
+    <module name="core" dependsOn="global" blocks="core">
+        <artifact name="ss-core" appJar="true"/>
+
+        <property name="cuba.springContextConfig" value="+ru/udya/sharedsession/spring.xml"/>
+        <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.core"/>
+    </module>
+    <module name="web" dependsOn="global" blocks="web">
+        <artifact name="ss-web" appJar="true"/>
+        <artifact name="ss-web" classifier="web" ext="zip" configuration="webcontent"/>
+
+        <property name="cuba.springContextConfig" value="+ru/udya/sharedsession/web-spring.xml"/>
+        <property name="cuba.dispatcherSpringContextConfig" value="+ru/udya/sharedsession/web-dispatcher-spring.xml"/>
+        <property name="cuba.windowConfig" value="+ru/udya/sharedsession/web-screens.xml"/>
+        <property name="cuba.menuConfig" value="+ru/udya/sharedsession/web-menu.xml"/>
+        <property name="cuba.permissionConfig" value="+ru/udya/sharedsession/web-permissions.xml"/>
+        <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.web"/>
+    </module>
+    <module name="portal" dependsOn="global" blocks="portal">
+        <artifact name="ss-portal" appJar="true"/>
+
+        <property name="cuba.springContextConfig"
+                  value="+ru/udya/sharedsession/portal-security-spring.xml ru/udya/sharedsession/portal-spring.xml"/>
+        <property name="cuba.dispatcherSpringContextConfig"
+                  value="+ru/udya/sharedsession/portal-dispatcher-spring.xml"/>
+        <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.portal"/>
+    </module>
+</app-component>
