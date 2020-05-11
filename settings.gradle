@@ -1,5 +1,5 @@
 rootProject.name = 'shared-session'
-def modulePrefix = 'app'
+def modulePrefix = 'ss'
 include(":${modulePrefix}-global", ":${modulePrefix}-core", ":${modulePrefix}-web", ":${modulePrefix}-portal")
 project(":${modulePrefix}-global").projectDir = new File(settingsDir, 'modules/global')
 project(":${modulePrefix}-core").projectDir = new File(settingsDir, 'modules/core')

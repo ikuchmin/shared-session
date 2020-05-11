@@ -10,7 +10,7 @@
         <param-value>
             classpath:ru/udya/sharedsession/web-app.properties
             /WEB-INF/local.app.properties
-            "file:${catalina.base}/conf/app/local.app.properties"
+            "file:${catalina.base}/conf/ss/local.app.properties"
         </param-value>
     </context-param>
     <!--Application components-->
