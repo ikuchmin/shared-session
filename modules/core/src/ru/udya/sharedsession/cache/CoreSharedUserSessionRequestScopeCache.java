@@ -7,9 +7,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.UUID;
 
-@Component(SharedUserSessionRequestScopeCache.NAME)
+@Component(SharedUserSessionCache.NAME)
 public class CoreSharedUserSessionRequestScopeCache
-        implements SharedUserSessionRequestScopeCache {
+        implements SharedUserSessionCache {
 
     public static final String SESSION_CACHE_ATTRIBUTE = "shared_session";
 

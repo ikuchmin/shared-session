@@ -4,9 +4,9 @@ import com.haulmont.cuba.security.global.UserSession;
 
 import java.util.UUID;
 
-public interface SharedUserSessionRequestScopeCache {
+public interface SharedUserSessionCache {
 
-    String NAME = "ss_SharedUserSessionRequestScopeCache";
+    String NAME = "ss_SharedUserSessionCache";
 
     <T extends UserSession> T getUserSessionFromCacheById(UUID id);
 

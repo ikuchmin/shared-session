@@ -18,7 +18,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.cache.SharedUserSessionRequestScopeCache;
+import ru.udya.sharedsession.cache.SharedUserSessionCache;
 import ru.udya.sharedsession.config.RedisConfig;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
@@ -50,7 +50,7 @@ public class RedisSharedUserSessionRepository
 
     public static final String KEY_PATTERN = "shared:session:%s";
 
-    protected SharedUserSessionRequestScopeCache sessionRequestScopeCache;
+    protected SharedUserSessionCache sessionRequestScopeCache;
 
     protected RedisConfig redisConfig;
     protected RedisClient redisClient;
@@ -58,7 +58,7 @@ public class RedisSharedUserSessionRepository
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
     public RedisSharedUserSessionRepository(RedisConfig redisConfig, RedisClient redisClient,
-                                            SharedUserSessionRequestScopeCache sessionRequestScopeCache) {
+                                            SharedUserSessionCache sessionRequestScopeCache) {
         this.redisConfig = redisConfig;
         this.redisClient = redisClient;
         this.sessionRequestScopeCache = sessionRequestScopeCache;
