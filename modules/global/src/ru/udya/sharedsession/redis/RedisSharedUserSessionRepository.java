@@ -55,7 +55,7 @@ public class RedisSharedUserSessionRepository
     protected RedisConfig redisConfig;
     protected RedisClient redisClient;
     protected RedisCodec<String, UserSession> objectRedisCodec;
-    protected StatefulRedisConnection<String, UserSession> asyncRedisConnection;
+    protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
     public RedisSharedUserSessionRepository(RedisConfig redisConfig, RedisClient redisClient,
                                             SharedUserSessionRequestScopeCache sessionRequestScopeCache) {
@@ -68,7 +68,7 @@ public class RedisSharedUserSessionRepository
     @SuppressWarnings("unused")
     public void init() {
         this.objectRedisCodec = RedisUserSessionCodec.INSTANCE;
-        this.asyncRedisConnection = redisClient.connect(objectRedisCodec);
+        this.asyncReadConnection = redisClient.connect(objectRedisCodec);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class RedisSharedUserSessionRepository
 
         protected void save() {
             try {
-                asyncRedisConnection.async()
+                asyncReadConnection.async()
                         .set(sessionKey, delegate)
                         .get();
 
@@ -213,7 +213,7 @@ public class RedisSharedUserSessionRepository
                         .getUserSessionFromCacheBySessionKey(this.sessionKey);
 
                 if (sharedUserSession == null) {
-                    UserSession userSession = asyncRedisConnection.async()
+                    UserSession userSession = asyncReadConnection.async()
                             .get(sessionKey).get();
                     sharedUserSession = new RedisSharedUserSession(userSession, sessionKey);
 
