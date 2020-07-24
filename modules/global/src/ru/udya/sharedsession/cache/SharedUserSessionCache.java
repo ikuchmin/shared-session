@@ -3,16 +3,16 @@ package ru.udya.sharedsession.cache;
 import com.haulmont.cuba.security.global.UserSession;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 public interface SharedUserSessionCache {
 
     String NAME = "ss_SharedUserSessionCache";
 
-    <T extends UserSession> T getUserSessionFromCacheById(UUID id);
+    <T extends UserSession> T getFromCacheBySessionKey(
+            String sessionKey, Function<String, T> getBySessionKeyId);
 
-    <T extends UserSession> T getUserSessionFromCacheBySessionKey(String sessionKey);
+    void saveInCache(String sessionKey, UserSession userSession);
 
-    void saveUserSessionInCache(UserSession userSession);
-
-    void removeUserSessionFromCache(UserSession userSession);
+    void removeFromCache(String sessionKey);
 }

@@ -2,6 +2,7 @@
 buildscript {
     ext.cubaVersion = '7.2.4'
     repositories {
+        mavenLocal()
         maven {
             url 'https://repo.cuba-platform.com/content/groups/work'
             credentials {
@@ -50,7 +51,7 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     apply(plugin: 'cuba')
 
     dependencies {
-        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.0.0.M1'
+        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.0.0.BUILD-SNAPSHOT'
 
         testCompile('junit:junit:4.12')
     }
