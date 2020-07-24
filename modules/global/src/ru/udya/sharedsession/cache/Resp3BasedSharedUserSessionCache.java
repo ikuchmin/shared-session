@@ -1,10 +1,12 @@
 package ru.udya.sharedsession.cache;
 
 import com.haulmont.cuba.security.global.UserSession;
+import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.TrackingArgs;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.codec.StringCodec;
+import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import org.springframework.stereotype.Component;
@@ -31,6 +33,12 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
+        ClientOptions resp3 = ClientOptions.builder()
+                .protocolVersion(ProtocolVersion.RESP3).build();
+
+        //todo bad idea - resolve
+        this.redisClient.setOptions(resp3);
+
         this.invalidateConnection = redisClient.connectPubSub();
         RedisPubSubCommands<String, String> commands =
                 this.invalidateConnection.sync();
