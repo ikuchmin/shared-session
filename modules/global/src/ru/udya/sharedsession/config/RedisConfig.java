@@ -14,6 +14,14 @@ public interface RedisConfig extends Config {
     @DefaultString("redis://localhost/0")
     String getRedisUri();
 
+    @Property("ss.redis.host")
+    @DefaultString("192.168.99.100")
+    String getRedisHost();
+
+    @Property("ss.redis.port")
+    @DefaultInteger(6379)
+    Integer getRedisPort();
+
     @Property("ss.redis.password")
     @DefaultString("")
     String getRedisPassword();

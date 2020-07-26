@@ -1,15 +1,18 @@
 package ru.udya.sharedsession.cache;
 
 import com.haulmont.cuba.security.global.UserSession;
-import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.TrackingArgs;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.codec.StringCodec;
-import io.lettuce.core.protocol.ProtocolVersion;
+import io.lettuce.core.event.EventBus;
+import io.lettuce.core.event.connection.DisconnectedEvent;
+import io.lettuce.core.event.connection.ReconnectFailedEvent;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.redis.RedisSharedUserSessionRepository;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -20,6 +23,8 @@ import java.util.function.Function;
 
 @Component(SharedUserSessionCache.NAME)
 public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache {
+
+    private static final Logger log = LoggerFactory.getLogger(Resp3BasedSharedUserSessionCache.class);
 
     private RedisClient redisClient;
 
@@ -33,25 +38,33 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        ClientOptions resp3 = ClientOptions.builder()
-                .protocolVersion(ProtocolVersion.RESP3).build();
-
-        //todo bad idea - resolve
-        this.redisClient.setOptions(resp3);
-
         this.invalidateConnection = redisClient.connectPubSub();
         RedisPubSubCommands<String, String> commands =
                 this.invalidateConnection.sync();
 
-        commands.clientTracking(TrackingArgs.Builder.enabled());
+        commands.clientTracking(TrackingArgs.Builder.enabled()
+                .bcast().prefixes(RedisSharedUserSessionRepository.KEY_PREFIX));
         this.invalidateConnection.addListener(message -> {
+
             if (message.getType().equals("invalidate")) {
 
                 //noinspection unchecked
                 List<String> keysToInvalidate = (List<String>)
                         message.getContent(StringCodec.UTF8::decodeKey).get(1);
 
+                log.info("Invalidate keys: {}", keysToInvalidate);
+
                 keysToInvalidate.forEach(cache::remove);
+            }
+        });
+
+        // flush cache if connection is lost
+        EventBus eventBus = redisClient.getResources().eventBus();
+        eventBus.get().subscribe(event -> {
+            if (event instanceof DisconnectedEvent ||
+                    event instanceof ReconnectFailedEvent) {
+
+                cache.clear();
             }
         });
     }
@@ -60,7 +73,9 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
     @SuppressWarnings("unchecked")
     public <T extends UserSession> T getFromCacheBySessionKey(
             String sessionKey, Function<String, T> getBySessionKeyId) {
+
         return (T) cache.computeIfAbsent(sessionKey, getBySessionKeyId);
+
     }
 
     @Override

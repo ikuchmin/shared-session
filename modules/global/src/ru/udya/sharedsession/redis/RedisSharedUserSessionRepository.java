@@ -19,7 +19,6 @@ import io.lettuce.core.codec.RedisCodec;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.cache.SharedUserSessionCache;
-import ru.udya.sharedsession.config.RedisConfig;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
@@ -32,6 +31,7 @@ import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +48,7 @@ import java.util.function.Function;
 public class RedisSharedUserSessionRepository
         implements SharedUserSessionRepository {
 
-    public static final String KEY_PATTERN = "shared:session:%s";
+    public static final String KEY_PREFIX = "shared:session";
 
     protected SharedUserSessionCache sessionCache;
 
@@ -113,8 +113,33 @@ public class RedisSharedUserSessionRepository
         throw new NotImplementedException("Will be implemented in a future");
     }
 
+    @PreDestroy
+    public void close() {
+        asyncReadConnection.close();
+    }
+
+    protected RedisSharedUserSession findBySessionKeyNoCache(String sessionKey) {
+        try {
+
+            UserSession userSession = asyncReadConnection.async()
+                    .get(sessionKey).get();
+
+            return new RedisSharedUserSession(userSession, sessionKey);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user session", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during getting user session", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
+    }
+
     protected String createSessionKey(UUID id) {
-        return String.format(KEY_PATTERN, id);
+        return KEY_PREFIX + ":" + id;
     }
 
     protected class RedisSharedUserSession extends UserSession
@@ -207,30 +232,12 @@ public class RedisSharedUserSessionRepository
         protected <T> T safeGettingValue(Function<RedisSharedUserSession, T> getter) {
 
             RedisSharedUserSession sharedUserSession = sessionCache
-                    .getFromCacheBySessionKey(this.sessionKey, this::getFromRedisBySessionKey);
+                    .getFromCacheBySessionKey(this.sessionKey,
+                            RedisSharedUserSessionRepository.this::findBySessionKeyNoCache);
 
             return getter.apply(sharedUserSession);
         }
 
-        protected RedisSharedUserSession getFromRedisBySessionKey(String sessionKey) {
-            try {
-
-                UserSession userSession = asyncReadConnection.async()
-                        .get(sessionKey).get();
-
-                return new RedisSharedUserSession(userSession, sessionKey);
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new SharedSessionReadingException("Thread is interrupted by external process during getting user session", e);
-            } catch (ExecutionException e) {
-                throw new SharedSessionReadingException("Exception during getting user session", e);
-            } catch (RedisCommandTimeoutException e) {
-                throw new SharedSessionTimeoutException(e);
-            } catch (RedisException e) {
-                throw new SharedSessionException(e);
-            }
-        }
 
         @Override
         public UUID getId() {
