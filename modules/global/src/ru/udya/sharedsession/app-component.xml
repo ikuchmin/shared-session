@@ -33,9 +33,10 @@
         <artifact name="ss-portal" appJar="true"/>
 
         <property name="cuba.springContextConfig"
-                  value="+ru/udya/sharedsession/portal-security-spring.xml ru/udya/sharedsession/portal-spring.xml"/>
-        <property name="cuba.dispatcherSpringContextConfig"
-                  value="+ru/udya/sharedsession/portal-dispatcher-spring.xml"/>
+                  value="+ru/udya/sharedsession/portal-spring.xml"/>
         <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.portal"/>
+
+        <property name="cuba.serialization.impl" value="ru.udya.sharedsession.serialization.SharedUserSessionStandardSerialization"/>
+
     </module>
 </app-component>
