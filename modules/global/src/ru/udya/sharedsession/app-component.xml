@@ -14,6 +14,7 @@
 
         <property name="cuba.springContextConfig" value="+ru/udya/sharedsession/spring.xml"/>
         <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.core"/>
+        <property name="cuba.serialization.impl" value="ru.udya.sharedsession.serialization.SharedUserSessionStandardSerialization"/>
     </module>
     <module name="web" dependsOn="global" blocks="web">
         <artifact name="ss-web" appJar="true"/>
@@ -25,6 +26,8 @@
         <property name="cuba.menuConfig" value="+ru/udya/sharedsession/web-menu.xml"/>
         <property name="cuba.permissionConfig" value="+ru/udya/sharedsession/web-permissions.xml"/>
         <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.web"/>
+        <property name="cuba.serialization.impl" value="ru.udya.sharedsession.serialization.SharedUserSessionStandardSerialization"/>
+        <property name="cuba_Connection" value="ru.udya.sharedsession.client.SharedSessionConnectionImpl"/>
     </module>
     <module name="portal" dependsOn="global" blocks="portal">
         <artifact name="ss-portal" appJar="true"/>

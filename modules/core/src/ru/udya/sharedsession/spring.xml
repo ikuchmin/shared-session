@@ -4,4 +4,6 @@
 
     <!-- Annotation-based beans -->
     <context:component-scan base-package="ru.udya.sharedsession"/>
+
+    <bean id="cuba_UserSessionManager" class="ru.udya.sharedsession.sys.SharedUserSessionManager"/>
 </beans>
