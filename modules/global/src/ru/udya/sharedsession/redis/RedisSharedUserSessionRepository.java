@@ -92,6 +92,7 @@ public class RedisSharedUserSessionRepository
 
     @Override
     public UserSession findById(UUID id) {
+        // todo check that session is exist
         return new RedisSharedUserSession(id);
     }
 
