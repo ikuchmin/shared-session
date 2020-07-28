@@ -6,6 +6,3 @@ Shared Session AppComponent saves user sessions into external storage (now it is
 It helps you:
 - to configure cluster configuration for CUBA.platform apps
 - to make SOA or microservices architecture
-
-
-It is commercial **(paid)** component
