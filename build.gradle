@@ -16,9 +16,6 @@ buildscript {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
     }
 }
-plugins {
-    id 'maven-publish'
-}
 
 def modulePrefix = 'ss'
 
@@ -53,6 +50,7 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     apply(plugin: 'maven')
     apply(plugin: 'cuba')
     apply(plugin: 'groovy')
+    apply(plugin: 'maven-publish')
 
     sourceSets {
         test {
@@ -91,6 +89,24 @@ configure([globalModule, coreModule, webModule, portalModule]) {
 
     artifacts {
         archives sourceJar
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = 'shared-session'
+                from components.java
+
+                pom {
+                    name = 'shared-session'
+                    scm {
+                        connection = 'scm:git:git://github.com/ikuchmin/shared-session.git'
+                        developerConnection = 'scm:git:ssh://github.com/ikuchmin/shared-session.git'
+                        url = 'https://github.com/ikuchmin/shared-s ession'
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -261,33 +277,6 @@ configure(portalModule) {
 
     artifacts {
         archives webArchive
-    }
-}
-
-publishing {
-    publications {
-        haulmontPremiumSnapshot(MavenPublication) {
-            artifactId = 'shared-session'
-            from components.java
-            pom {
-                name = 'shared-session'
-                description = 'Library with crud repository'
-                scm {
-                    connection = 'scm:git@https://github.com/ikuchmin/shared-session.git'
-                    developerConnection = 'scm:git@https://github.com/ikuchmin/shared-session.git'
-                    url = 'https://github.com/ikuchmin/shared-session'
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                username publicRepoUser
-                password publicRepoPassword
-            }
-            url = publicPremiumSnapshotsUrl
-        }
     }
 }
 
