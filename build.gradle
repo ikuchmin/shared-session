@@ -280,7 +280,7 @@ configure(portalModule) {
     }
 }
 
-def distribution = "$buildDir/distribution/"
+def distributionDir = "$buildDir/distributions/"
 
 task distribute() {}
 
@@ -294,7 +294,7 @@ subprojects.each { sub ->
     def registered = tasks.register("distribute${preparedName}", Copy) {
         from sub.tasks.withType(AbstractArchiveTask)
         from sub.tasks.withType(GenerateMavenPom)
-        into "$distribution$sub.name"
+        into "$distributionDir$sub.name"
     }
 
     distribute.dependsOn registered
