@@ -280,6 +280,26 @@ configure(portalModule) {
     }
 }
 
+def distribution = "$buildDir/distribution/"
+
+task distribute() {}
+
+subprojects.each { sub ->
+    // prepare name
+    def preparedName =
+            sub.name.split('-')
+                    .collect { it.capitalize() }
+                    .join('')
+
+    def registered = tasks.register("distribute${preparedName}", Copy) {
+        from sub.tasks.withType(AbstractArchiveTask)
+        from sub.tasks.withType(GenerateMavenPom)
+        into "$distribution$sub.name"
+    }
+
+    distribute.dependsOn registered
+}
+
 task undeploy(type: Delete, dependsOn: ":${modulePrefix}-web:cleanConf") {
     delete("$cuba.tomcat.dir/shared")
     delete("$cuba.tomcat.dir/webapps/${modulePrefix}-core")
