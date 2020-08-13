@@ -11,6 +11,6 @@ It helps you:
 ## Build
 
 ```shell script
-./gradlew clean assemble ss-core:dbScriptsArchive 
+./gradlew clean assemble dbScriptsArchive distribute 
 ```
 
