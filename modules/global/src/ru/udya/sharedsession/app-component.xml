@@ -11,6 +11,7 @@
     </module>
     <module name="core" dependsOn="global" blocks="core">
         <artifact name="ss-core" appJar="true"/>
+        <artifact name="ss-core" classifier="db" ext="zip" configuration="dbscripts"/>
 
         <property name="cuba.springContextConfig" value="+ru/udya/sharedsession/spring.xml"/>
         <property name="cuba.mainMessagePack" value="+ru.udya.sharedsession.core"/>
