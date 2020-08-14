@@ -94,11 +94,9 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     publishing {
         publications {
             mavenJava(MavenPublication) {
-                artifactId = 'shared-session'
                 from components.java
 
                 pom {
-                    name = 'shared-session'
                     scm {
                         connection = 'scm:git:git://github.com/ikuchmin/shared-session.git'
                         developerConnection = 'scm:git:ssh://github.com/ikuchmin/shared-session.git'
