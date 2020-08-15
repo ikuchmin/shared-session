@@ -100,7 +100,7 @@ configure([globalModule, coreModule, webModule, portalModule]) {
                     scm {
                         connection = 'scm:git:git://github.com/ikuchmin/shared-session.git'
                         developerConnection = 'scm:git:ssh://github.com/ikuchmin/shared-session.git'
-                        url = 'https://github.com/ikuchmin/shared-s ession'
+                        url = 'https://github.com/ikuchmin/shared-session'
                     }
                 }
             }
