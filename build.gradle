@@ -299,6 +299,10 @@ subprojects.each { sub ->
     distribute.dependsOn registered
 }
 
+task cleanDistribute(type: Delete) {
+    delete distributionDir
+}
+
 task undeploy(type: Delete, dependsOn: ":${modulePrefix}-web:cleanConf") {
     delete("$cuba.tomcat.dir/shared")
     delete("$cuba.tomcat.dir/webapps/${modulePrefix}-core")
