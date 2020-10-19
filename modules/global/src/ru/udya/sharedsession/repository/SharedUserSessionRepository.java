@@ -3,6 +3,11 @@ package ru.udya.sharedsession.repository;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.role.RoleDefinition;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.codec.RedisCodec;
+import ru.udya.sharedsession.cache.SharedUserSessionCache;
+import ru.udya.sharedsession.redis.RedisSharedUserSession;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,4 +44,16 @@ public interface SharedUserSessionRepository {
     void delete(UserSession session);
 
     void deleteById(UserSession session);
+
+    void saveInCache(String sessionKey, RedisSharedUserSession sharedUserSession);
+
+    RedisClient getRedisClient();
+
+    RedisCodec<String, UserSession> getObjectRedisCodec();
+
+    StatefulRedisConnection<String, UserSession> getAsyncReadConnection();
+
+    SharedUserSessionCache getSessionCache();
+
+    RedisSharedUserSession findBySessionKeyNoCache(String sessionKey);
 }
