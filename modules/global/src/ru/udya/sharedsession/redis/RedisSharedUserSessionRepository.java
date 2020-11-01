@@ -1,6 +1,7 @@
 package ru.udya.sharedsession.redis;
 
 import com.haulmont.chile.core.model.MetaClass;
+import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.Access;
 import com.haulmont.cuba.security.entity.EntityAttrAccess;
 import com.haulmont.cuba.security.entity.EntityOp;
@@ -25,9 +26,11 @@ import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
 import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
+import ru.udya.sharedsession.permission.PermissionHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.repository.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
+import ru.udya.sharedsession.service.SharedUserPermissionRuntime;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
@@ -50,9 +53,12 @@ public class RedisSharedUserSessionRepository
 
     public static final String KEY_PREFIX = "shared:session";
 
-    protected SharedUserSessionCache sessionCache;
+    protected PermissionHelper permissionConverter;
 
     protected RedisClient redisClient;
+    protected SharedUserSessionCache sessionCache;
+    protected SharedUserPermissionRuntime sharedUserPermissionRuntime;
+
     protected RedisCodec<String, UserSession> objectRedisCodec;
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
@@ -239,6 +245,90 @@ public class RedisSharedUserSessionRepository
             return getter.apply(sharedUserSession);
         }
 
+        // permission
+
+
+        @Override
+        public boolean isScreenPermitted(String windowAlias) {
+            var permission = permissionConverter
+                    .buildPermissionByWindowAlias(windowAlias);
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public boolean isEntityOpPermitted(MetaClass metaClass, EntityOp entityOp) {
+            var permission = permissionConverter
+                    .buildPermissionByEntity(metaClass, entityOp);
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public boolean isEntityAttrPermitted(MetaClass metaClass, String property,
+                                             EntityAttrAccess access) {
+            var permission = permissionConverter
+                    .buildPermissionByEntityAttribute(metaClass, property, access);
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public boolean isSpecificPermitted(String name) {
+            var permission = permissionConverter
+                    .buildPermissionBySpecificPermission(name);
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public boolean isPermitted(PermissionType type, String target) {
+            var permission = permissionConverter
+                    .buildPermission(type, target);
+
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public boolean isPermitted(PermissionType type, String target, int value) {
+            var permission = permissionConverter
+                    .buildPermission(type, target, value);
+
+            return sharedUserPermissionRuntime
+                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+        }
+
+        @Override
+        public Integer getPermissionValue(PermissionType type,
+                                          String target) {
+            return safeGettingValue(us -> us.delegate.getPermissionValue(type, target));
+        }
+
+        @Override
+        public Map<String, Integer> getPermissionsByType(
+                PermissionType type) {
+            return safeGettingValue(us -> us.delegate.getPermissionsByType(type));
+        }
+
+
+        @Override
+        public Access getPermissionUndefinedAccessPolicy() {
+            return safeGettingValue(us -> us.delegate.getPermissionUndefinedAccessPolicy());
+        }
+
+        @Override
+        public void setPermissionUndefinedAccessPolicy(
+                Access permissionUndefinedAccessPolicy) {
+            safeUpdatingValue(us -> us.delegate.setPermissionUndefinedAccessPolicy(permissionUndefinedAccessPolicy));
+        }
+
+        // boilerplate
 
         @Override
         public UUID getId() {
@@ -317,51 +407,6 @@ public class RedisSharedUserSessionRepository
         }
 
         @Override
-        public Integer getPermissionValue(PermissionType type,
-                                          String target) {
-            return safeGettingValue(us -> us.delegate.getPermissionValue(type, target));
-        }
-
-        @Override
-        public Map<String, Integer> getPermissionsByType(
-                PermissionType type) {
-            return safeGettingValue(us -> us.delegate.getPermissionsByType(type));
-        }
-
-        @Override
-        public boolean isScreenPermitted(String windowAlias) {
-            return safeGettingValue(us -> us.delegate.isScreenPermitted(windowAlias));
-        }
-
-        @Override
-        public boolean isEntityOpPermitted(MetaClass metaClass,
-                                           EntityOp entityOp) {
-            return safeGettingValue(us -> us.delegate.isEntityOpPermitted(metaClass, entityOp));
-        }
-
-        @Override
-        public boolean isEntityAttrPermitted(MetaClass metaClass,
-                                             String property,
-                                             EntityAttrAccess access) {
-            return safeGettingValue(us -> us.delegate.isEntityAttrPermitted(metaClass, property, access));
-        }
-
-        @Override
-        public boolean isSpecificPermitted(String name) {
-            return safeGettingValue(us -> us.delegate.isSpecificPermitted(name));
-        }
-
-        @Override
-        public boolean isPermitted(PermissionType type, String target) {
-            return safeGettingValue(us -> us.delegate.isPermitted(type, target));
-        }
-
-        @Override
-        public boolean isPermitted(PermissionType type, String target, int value) {
-            return safeGettingValue(us -> us.delegate.isPermitted(type, target, value));
-        }
-
-        @Override
         @Nullable
         public <T> T getAttribute(String name) {
             return safeGettingValue(us -> us.delegate.getAttribute(name));
@@ -405,17 +450,6 @@ public class RedisSharedUserSessionRepository
         @Override
         public void setConstraints(ConstraintsContainer constraints) {
             safeUpdatingValue(us -> us.delegate.setConstraints(constraints));
-        }
-
-        @Override
-        public Access getPermissionUndefinedAccessPolicy() {
-            return safeGettingValue(us -> us.delegate.getPermissionUndefinedAccessPolicy());
-        }
-
-        @Override
-        public void setPermissionUndefinedAccessPolicy(
-                Access permissionUndefinedAccessPolicy) {
-            safeUpdatingValue(us -> us.delegate.setPermissionUndefinedAccessPolicy(permissionUndefinedAccessPolicy));
         }
 
         @Override

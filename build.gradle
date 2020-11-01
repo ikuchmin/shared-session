@@ -49,6 +49,11 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     apply(plugin: 'groovy')
     apply(plugin: 'maven-publish')
 
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
     sourceSets {
         test {
             java {
