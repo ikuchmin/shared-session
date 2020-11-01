@@ -2,26 +2,32 @@ package ru.udya.sharedsession.service;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.User;
-import ru.udya.sharedsession.permission.PermissionHelper;
+import ru.udya.sharedsession.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.SharedUserPermissionHelper;
 import ru.udya.sharedsession.repository.SharedUserPermissionRepository;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.stream.Collectors.toList;
 
 public class RedisSharedUserPermissionRuntime
         implements SharedUserPermissionRuntime {
 
-    protected PermissionHelper permissionConverter;
+    protected SharedUserPermissionHelper permissionHelper;
     protected SharedUserPermissionRepository sharedUserPermissionRepository;
 
     @Override
-    public boolean isPermissionGrantedToUser(String permission, Id<User, UUID> userId) {
+    public boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId) {
 
-        List<String> permissionsWithWildcards =
-                permissionConverter.buildWildcardsPermissionsBasedOn(permission);
+        List<SharedUserPermission> wildcardsPermissions =
+                permissionHelper.buildWildcardsPermissions(permission);
 
-        for (String perm : permissionsWithWildcards) {
+        wildcardsPermissions = wildcardsPermissions.stream()
+                                                   .distinct()
+                                                   .collect(toList());
+
+        for (SharedUserPermission perm : wildcardsPermissions) {
             var isGranted = sharedUserPermissionRepository
                     .isPermissionGrantedToUser(perm, userId);
 
@@ -31,11 +37,5 @@ public class RedisSharedUserPermissionRuntime
         }
 
         return false;
-    }
-
-    protected List<String> generateWildcardsPermissions(String permission) {
-
-
-        return Collections.emptyList();
     }
 }

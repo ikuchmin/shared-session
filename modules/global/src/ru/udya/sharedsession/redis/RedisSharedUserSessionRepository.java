@@ -26,7 +26,7 @@ import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
 import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
-import ru.udya.sharedsession.permission.PermissionHelper;
+import ru.udya.sharedsession.permission.SharedUserPermissionHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.repository.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
@@ -53,7 +53,7 @@ public class RedisSharedUserSessionRepository
 
     public static final String KEY_PREFIX = "shared:session";
 
-    protected PermissionHelper permissionConverter;
+    protected SharedUserPermissionHelper permissionConverter;
 
     protected RedisClient redisClient;
     protected SharedUserSessionCache sessionCache;
@@ -246,7 +246,6 @@ public class RedisSharedUserSessionRepository
         }
 
         // permission
-
 
         @Override
         public boolean isScreenPermitted(String windowAlias) {
