@@ -4,17 +4,10 @@ public interface SharedUserPermission {
 
     String WILDCARD = "*";
 
-    SharedUserEntityPermission ALL_ENTITY_PERMISSIONS =
-            entityPermission(WILDCARD, WILDCARD, WILDCARD);
-
-    SharedUserEntityAttributePermission ALL_ENTITY_ATTRIBUTES_PERMISSIONS =
-            entityAttributePermission(WILDCARD, WILDCARD, WILDCARD, WILDCARD, WILDCARD);
-
-    SharedUserSpecificPermission ALL_SPECIFIC_PERMISSIONS =
-            specificPermission(WILDCARD, WILDCARD);
-
-    SharedUserScreenPermission ALL_SCREEN_PERMISSIONS =
-            screenPermission(WILDCARD, WILDCARD);
+    SharedUserPermission ALL_ENTITY_PERMISSIONS = entityPermission(WILDCARD, WILDCARD, WILDCARD);
+    SharedUserPermission ALL_ENTITY_ATTRIBUTES_PERMISSIONS = entityAttributePermission(WILDCARD, WILDCARD, WILDCARD, WILDCARD, WILDCARD);
+    SharedUserPermission ALL_SPECIFIC_PERMISSIONS = specificPermission(WILDCARD, WILDCARD);
+    SharedUserPermission ALL_SCREEN_PERMISSIONS = screenPermission(WILDCARD, WILDCARD);
 
     static SharedUserEntityPermission entityPermission(String entityType,
                                                        String entityId,
@@ -68,6 +61,19 @@ public interface SharedUserPermission {
         var permission = new SharedUserScreenPermission();
 
         permission.screenId = screenId;
+        permission.operation = operation;
+
+        return permission;
+    }
+
+    static SharedUserScreenElementPermission screenElementPermission(String screenId,
+                                                                     String screenElementId,
+                                                                     String operation) {
+
+        var permission = new SharedUserScreenElementPermission();
+
+        permission.screenId = screenId;
+        permission.screenElementId = screenElementId;
         permission.operation = operation;
 
         return permission;
