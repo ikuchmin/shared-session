@@ -8,5 +8,7 @@ import java.util.UUID;
 
 public interface SharedUserPermissionRuntime {
 
+    String NAME = "ss_SharedUserPermissionRuntime";
+
     boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId);
 }

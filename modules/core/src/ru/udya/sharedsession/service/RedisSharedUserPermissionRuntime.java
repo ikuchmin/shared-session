@@ -2,6 +2,7 @@ package ru.udya.sharedsession.service;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.User;
+import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
@@ -16,6 +17,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
+@Component(SharedUserPermissionRuntime.NAME)
 public class RedisSharedUserPermissionRuntime
         implements SharedUserPermissionRuntime {
 
