@@ -4,15 +4,22 @@ import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static io.vavr.API.$;
+import static io.vavr.API.Case;
+import static io.vavr.API.Match;
+import static io.vavr.Predicates.instanceOf;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_ENTITY_ATTRIBUTES_PERMISSIONS;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_ENTITY_PERMISSIONS;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_SCREEN_ELEMENT_PERMISSIONS;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_SCREEN_PERMISSIONS;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_SPECIFIC_PERMISSIONS;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDCARD;
@@ -20,31 +27,33 @@ import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDC
 @Component("ss_SharedUserPermissionWildcardHelper")
 public class SharedUserPermissionWildcardHelper {
 
-    public List<SharedUserPermission> buildWildcardsPermissions(SharedUserPermission permission) {
+    public List<SharedUserPermission> buildWildcardPermissions(SharedUserPermission permission) {
 
-        if (permission instanceof SharedUserEntityPermission) {
-            return buildWildcardsEntityPermissions((SharedUserEntityPermission) permission);
-        }
+        //noinspection unchecked
+        return (List<SharedUserPermission>) Match(permission).of(
+                Case($(instanceOf(SharedUserEntityPermission.class)),
+                     this::buildWildcardEntityPermissions),
 
-        if (permission instanceof SharedUserEntityAttributePermission) {
-            return buildWildcardsEntityAttributePermissions((SharedUserEntityAttributePermission) permission);
-        }
+                Case($(instanceOf(SharedUserEntityAttributePermission.class)),
+                     this::buildWildcardEntityAttributePermissions),
 
-        if (permission instanceof SharedUserSpecificPermission) {
-            return buildWildcardsSpecificPermissions((SharedUserSpecificPermission) permission);
-        }
+                Case($(instanceOf(SharedUserSpecificPermission.class)),
+                     this::buildWildcardSpecificPermissions),
 
-        if (permission instanceof SharedUserScreenPermission) {
-            return buildWildcardsScreenPermissions((SharedUserScreenPermission) permission);
-        }
+                Case($(instanceOf(SharedUserScreenPermission.class)),
+                     this::buildWildcardScreenPermissions),
 
-        return Collections.emptyList();
+                Case($(instanceOf(SharedUserScreenElementPermission.class)),
+                     this::buildWildcardScreenElementPermissions),
+
+                Case($(), p -> Collections.emptyList())
+        );
     }
 
-    public List<SharedUserPermission> buildWildcardsEntityPermissions(
+    public List<SharedUserEntityPermission> buildWildcardEntityPermissions(
             SharedUserEntityPermission permission) {
 
-        return Arrays.asList(
+        return Stream.of(
                 ALL_ENTITY_PERMISSIONS,
 
                 SharedUserPermission.entityPermission(
@@ -58,13 +67,13 @@ public class SharedUserPermissionWildcardHelper {
 
                 SharedUserPermission.entityPermission(
                         WILDCARD, WILDCARD, permission.getOperation())
-        );
+        ).distinct().collect(Collectors.toList());
     }
 
-    public List<SharedUserPermission> buildWildcardsEntityAttributePermissions(
+    public List<SharedUserEntityAttributePermission> buildWildcardEntityAttributePermissions(
             SharedUserEntityAttributePermission permission) {
 
-        return Arrays.asList(
+        return Stream.of(
                 ALL_ENTITY_ATTRIBUTES_PERMISSIONS,
 
                 SharedUserPermission.entityAttributePermission(
@@ -108,13 +117,13 @@ public class SharedUserPermissionWildcardHelper {
                         WILDCARD, WILDCARD,
                         WILDCARD, WILDCARD,
                         permission.getOperation())
-        );
+        ).distinct().collect(Collectors.toList());
     }
 
-    public List<SharedUserPermission> buildWildcardsSpecificPermissions(
+    public List<SharedUserSpecificPermission> buildWildcardSpecificPermissions(
             SharedUserSpecificPermission permission) {
 
-        return Arrays.asList(
+        return Stream.of(
                 ALL_SPECIFIC_PERMISSIONS,
 
                 SharedUserPermission.specificPermission(
@@ -124,13 +133,13 @@ public class SharedUserPermissionWildcardHelper {
                 SharedUserPermission.specificPermission(
                         WILDCARD, permission.getOperation()
                 )
-        );
+        ).distinct().collect(Collectors.toList());
     }
 
-    public List<SharedUserPermission> buildWildcardsScreenPermissions(
+    public List<SharedUserScreenPermission> buildWildcardScreenPermissions(
             SharedUserScreenPermission permission) {
 
-        return Arrays.asList(
+        return Stream.of(
                 ALL_SCREEN_PERMISSIONS,
 
                 SharedUserPermission.screenPermission(
@@ -139,6 +148,24 @@ public class SharedUserPermissionWildcardHelper {
                 SharedUserPermission.screenPermission(
                         WILDCARD, permission.getOperation()
                 )
-        );
+        ).distinct().collect(Collectors.toList());
+    }
+
+    public List<SharedUserScreenElementPermission> buildWildcardScreenElementPermissions(
+            SharedUserScreenElementPermission permission) {
+
+        return Stream.of(
+                ALL_SCREEN_ELEMENT_PERMISSIONS,
+
+                SharedUserPermission.screenElementPermission(
+                        permission.getScreenId(), WILDCARD, WILDCARD),
+
+                SharedUserPermission.screenElementPermission(
+                        permission.getScreenId(), permission.getScreenElementId(), WILDCARD),
+
+                SharedUserPermission.screenElementPermission(
+                        WILDCARD, WILDCARD, permission.getOperation()
+                )
+        ).distinct().collect(Collectors.toList());
     }
 }

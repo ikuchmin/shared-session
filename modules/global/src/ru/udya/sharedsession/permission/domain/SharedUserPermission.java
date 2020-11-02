@@ -4,10 +4,12 @@ public interface SharedUserPermission {
 
     String WILDCARD = "*";
 
-    SharedUserPermission ALL_ENTITY_PERMISSIONS = entityPermission(WILDCARD, WILDCARD, WILDCARD);
-    SharedUserPermission ALL_ENTITY_ATTRIBUTES_PERMISSIONS = entityAttributePermission(WILDCARD, WILDCARD, WILDCARD, WILDCARD, WILDCARD);
-    SharedUserPermission ALL_SPECIFIC_PERMISSIONS = specificPermission(WILDCARD, WILDCARD);
-    SharedUserPermission ALL_SCREEN_PERMISSIONS = screenPermission(WILDCARD, WILDCARD);
+    SharedUserEntityPermission ALL_ENTITY_PERMISSIONS = entityPermission(WILDCARD, WILDCARD, WILDCARD);
+    SharedUserEntityAttributePermission ALL_ENTITY_ATTRIBUTES_PERMISSIONS = entityAttributePermission(WILDCARD, WILDCARD, WILDCARD, WILDCARD, WILDCARD);
+    SharedUserSpecificPermission ALL_SPECIFIC_PERMISSIONS = specificPermission(WILDCARD, WILDCARD);
+    SharedUserScreenPermission ALL_SCREEN_PERMISSIONS = screenPermission(WILDCARD, WILDCARD);
+    SharedUserScreenElementPermission ALL_SCREEN_ELEMENT_PERMISSIONS = screenElementPermission(WILDCARD, WILDCARD, WILDCARD);
+
 
     static SharedUserEntityPermission entityPermission(String entityType,
                                                        String entityId,
