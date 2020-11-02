@@ -1,11 +1,11 @@
 package ru.udya.sharedsession.permission.helper;
 
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.domain.SharedUserEntityAttributePermission;
-import ru.udya.sharedsession.domain.SharedUserEntityPermission;
-import ru.udya.sharedsession.domain.SharedUserPermission;
-import ru.udya.sharedsession.domain.SharedUserScreenPermission;
-import ru.udya.sharedsession.domain.SharedUserSpecificPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 
 import static io.vavr.API.$;
 import static io.vavr.API.Case;

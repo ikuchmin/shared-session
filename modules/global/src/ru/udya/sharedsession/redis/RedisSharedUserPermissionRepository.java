@@ -7,10 +7,10 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.StatefulRedisConnection;
-import ru.udya.sharedsession.domain.SharedUserPermission;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.redis.codec.RedisSharedUserPermissionCodec;
 import ru.udya.sharedsession.repository.SharedUserPermissionRepository;
 

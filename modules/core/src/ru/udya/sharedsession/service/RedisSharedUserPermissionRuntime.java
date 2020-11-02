@@ -2,7 +2,7 @@ package ru.udya.sharedsession.service;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.User;
-import ru.udya.sharedsession.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
 import ru.udya.sharedsession.repository.SharedUserPermissionRepository;

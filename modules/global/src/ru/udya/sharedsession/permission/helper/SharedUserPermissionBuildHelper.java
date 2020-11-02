@@ -5,9 +5,9 @@ import com.haulmont.cuba.security.entity.EntityAttrAccess;
 import com.haulmont.cuba.security.entity.EntityOp;
 import com.haulmont.cuba.security.entity.PermissionType;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 
-import static ru.udya.sharedsession.domain.SharedUserPermission.WILDCARD;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDCARD;
 
 @Component("ss_SharedUserPermissionBuildHelper")
 public class SharedUserPermissionBuildHelper {

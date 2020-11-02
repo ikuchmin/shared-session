@@ -4,7 +4,7 @@ import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionStringRepresentationHelper;
 
 import java.nio.ByteBuffer;

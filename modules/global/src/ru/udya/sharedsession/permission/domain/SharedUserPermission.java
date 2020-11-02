@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.domain;
+package ru.udya.sharedsession.permission.domain;
 
 public interface SharedUserPermission {
 

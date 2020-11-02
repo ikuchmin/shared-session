@@ -1,21 +1,21 @@
 package ru.udya.sharedsession.permission.helper;
 
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.domain.SharedUserEntityAttributePermission;
-import ru.udya.sharedsession.domain.SharedUserEntityPermission;
-import ru.udya.sharedsession.domain.SharedUserPermission;
-import ru.udya.sharedsession.domain.SharedUserScreenPermission;
-import ru.udya.sharedsession.domain.SharedUserSpecificPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_ENTITY_ATTRIBUTES_PERMISSIONS;
-import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_ENTITY_PERMISSIONS;
-import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_SCREEN_PERMISSIONS;
-import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_SPECIFIC_PERMISSIONS;
-import static ru.udya.sharedsession.domain.SharedUserPermission.WILDCARD;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_ENTITY_ATTRIBUTES_PERMISSIONS;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_ENTITY_PERMISSIONS;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_SCREEN_PERMISSIONS;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.ALL_SPECIFIC_PERMISSIONS;
+import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDCARD;
 
 @Component("ss_SharedUserPermissionWildcardHelper")
 public class SharedUserPermissionWildcardHelper {
