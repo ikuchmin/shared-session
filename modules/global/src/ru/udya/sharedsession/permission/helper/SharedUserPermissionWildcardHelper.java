@@ -1,9 +1,5 @@
-package ru.udya.sharedsession.permission;
+package ru.udya.sharedsession.permission.helper;
 
-import com.haulmont.chile.core.model.MetaClass;
-import com.haulmont.cuba.security.entity.EntityAttrAccess;
-import com.haulmont.cuba.security.entity.EntityOp;
-import com.haulmont.cuba.security.entity.PermissionType;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.domain.SharedUserEntityPermission;
@@ -21,83 +17,8 @@ import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_SCREEN_PERMI
 import static ru.udya.sharedsession.domain.SharedUserPermission.ALL_SPECIFIC_PERMISSIONS;
 import static ru.udya.sharedsession.domain.SharedUserPermission.WILDCARD;
 
-@Component("ss_PermissionConverter")
-public class SharedUserPermissionHelper {
-
-    public static final String PERMISSION_WINDOW_PATTERN = "screen:%s:open"; // screen:screenId:operation
-    public static final String PERMISSION_ENTITY_PATTERN = "entity:%s:%s:%s"; // entity:entityType:entityId:operation
-    public static final String PERMISSION_ENTITY_ATTRIBUTE_PATTERN = "entity_attribute:%s:%s:%s:%s:%s"; // entity_attribute:entityType:entityId:entityAttribute:entityAttributeValue:operation
-    public static final String PERMISSION_SPECIFIC_PATTERN = "specific:%s:perform"; // specific:specificId:operation
-
-
-
-    public SharedUserPermission buildPermission(PermissionType type, String target, int value) {
-
-        String typeName;
-        switch (type) {
-            case SCREEN:
-                typeName = "screen";
-                break;
-            case ENTITY_OP:
-                typeName = "entity";
-                break;
-            case ENTITY_ATTR:
-                typeName = "entity_attribute";
-                break;
-            case SPECIFIC:
-                typeName = "specific";
-                break;
-            case UI:
-                typeName = "ui";
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Permission type (%s) isn't supported", type));
-        }
-
-        return typeName + ":" + target;
-    }
-
-    public SharedUserPermission buildPermission(PermissionType type, String target) {
-
-        return String.format();
-    }
-
-    public SharedUserPermission buildPermissionByWindowAlias(String windowAlias) {
-
-        return SharedUserPermission.screenPermission(windowAlias, WILDCARD);
-    }
-
-    public SharedUserPermission buildPermissionByEntity(MetaClass metaClass, EntityOp entityOp) {
-
-        return SharedUserPermission.entityPermission(metaClass.getName(),
-                                                     WILDCARD, entityOp.getId());
-    }
-
-    public SharedUserPermission buildPermissionByEntity(MetaClass metaClass, String operation) {
-
-        return SharedUserPermission.entityPermission(metaClass.getName(), WILDCARD, operation);
-    }
-
-    public SharedUserPermission buildPermissionByEntityAttribute(
-            MetaClass metaClass, String property, EntityAttrAccess access) {
-
-        return SharedUserPermission.entityAttributePermission(metaClass.getName(), WILDCARD,
-                                                              property, WILDCARD,
-                                                              access.name().toLowerCase());
-    }
-
-    public SharedUserPermission buildPermissionByEntityAttribute(MetaClass metaClass,
-                                                                 String property,
-                                                                 String access) {
-
-        return SharedUserPermission.entityAttributePermission(metaClass.getName(), WILDCARD,
-                                                              property, WILDCARD, access);
-
-    }
-
-    public SharedUserPermission buildPermissionBySpecificPermission(String name) {
-        return SharedUserPermission.specificPermission(name, WILDCARD);
-    }
+@Component("ss_SharedUserPermissionWildcardHelper")
+public class SharedUserPermissionWildcardHelper {
 
     public List<SharedUserPermission> buildWildcardsPermissions(SharedUserPermission permission) {
 
@@ -137,7 +58,7 @@ public class SharedUserPermissionHelper {
 
                 SharedUserPermission.entityPermission(
                         WILDCARD, WILDCARD, permission.getOperation())
-                );
+        );
     }
 
     public List<SharedUserPermission> buildWildcardsEntityAttributePermissions(
@@ -187,7 +108,7 @@ public class SharedUserPermissionHelper {
                         WILDCARD, WILDCARD,
                         WILDCARD, WILDCARD,
                         permission.getOperation())
-                );
+        );
     }
 
     public List<SharedUserPermission> buildWildcardsSpecificPermissions(

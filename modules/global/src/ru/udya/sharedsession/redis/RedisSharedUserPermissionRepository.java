@@ -7,10 +7,11 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.StatefulRedisConnection;
+import ru.udya.sharedsession.domain.SharedUserPermission;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
-import ru.udya.sharedsession.redis.codec.RedisUserPermissionCodec;
+import ru.udya.sharedsession.redis.codec.RedisSharedUserPermissionCodec;
 import ru.udya.sharedsession.repository.SharedUserPermissionRepository;
 
 import javax.annotation.PostConstruct;
@@ -24,21 +25,21 @@ public class RedisSharedUserPermissionRepository
     public static final String KEY_PREFIX = "shared:permission";
 
     protected RedisClient redisClient;
-    protected RedisUserPermissionCodec objectRedisCodec;
+    protected RedisSharedUserPermissionCodec userPermissionCodec;
 
-    protected StatefulRedisConnection<String, UUID> asyncReadConnection;
+    protected StatefulRedisConnection<SharedUserPermission, UUID> asyncReadConnection;
 
 
     public RedisSharedUserPermissionRepository(RedisClient redisClient,
-                                               RedisUserPermissionCodec objectRedisCodec) {
+                                               RedisSharedUserPermissionCodec userPermissionCodec) {
         this.redisClient = redisClient;
-        this.objectRedisCodec = objectRedisCodec;
+        this.userPermissionCodec = userPermissionCodec;
     }
 
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        this.asyncReadConnection = redisClient.connect(objectRedisCodec);
+        this.asyncReadConnection = redisClient.connect(userPermissionCodec);
     }
 
     @Override
@@ -48,8 +49,8 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public boolean isPermissionGrantedToUser(String permission, Id<User, UUID> userId) {
-        var redisKey = modifyPermissionByKeySpace(permission);
+    public boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         try {
             return asyncReadConnection.async()
@@ -68,13 +69,9 @@ public class RedisSharedUserPermissionRepository
         }
     }
 
-    private String modifyPermissionByKeySpace(String permission) {
-        return KEY_PREFIX + ":" + permission;
-    }
-
     @Override
-    public void grantPermissionToUser(String permission, Id<User, UUID> userId) {
-        var redisKey = modifyPermissionByKeySpace(permission);
+    public void grantPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         try {
             asyncReadConnection.async()
@@ -94,8 +91,8 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void grantPermissionToUsers(String permission, Ids<User, UUID> userIds) {
-        var redisKey = modifyPermissionByKeySpace(permission);
+    public void grantPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds) {
+        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         var ids = userIds.getValues();
 
@@ -114,5 +111,9 @@ public class RedisSharedUserPermissionRepository
         } catch (RedisException e) {
             throw new SharedSessionException(e);
         }
+    }
+
+    protected String buildRedisKeyBySharedUserPermission(SharedUserPermission permission) {
+        return KEY_PREFIX + ":" + permission;
     }
 }
