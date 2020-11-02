@@ -5,7 +5,7 @@ import com.haulmont.cuba.security.entity.User;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
-import ru.udya.sharedsession.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
 
 import java.util.List;
 import java.util.UUID;

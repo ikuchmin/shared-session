@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.redis;
+package ru.udya.sharedsession.redis.permission.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.entity.contracts.Ids;
@@ -11,8 +11,8 @@ import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
-import ru.udya.sharedsession.redis.codec.RedisSharedUserPermissionCodec;
-import ru.udya.sharedsession.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -21,8 +21,6 @@ import java.util.concurrent.ExecutionException;
 
 public class RedisSharedUserPermissionRepository
         implements SharedUserPermissionRepository {
-
-    public static final String KEY_PREFIX = "shared:permission";
 
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
@@ -50,11 +48,10 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId) {
-        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         try {
             return asyncReadConnection.async()
-                                      .sismember(redisKey, userId.getValue())
+                                      .sismember(permission, userId.getValue())
                                       .get();
 
         } catch (InterruptedException e) {
@@ -71,11 +68,10 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public void grantPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId) {
-        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         try {
             asyncReadConnection.async()
-                               .sadd(redisKey, userId.getValue())
+                               .sadd(permission, userId.getValue())
                                .get();
 
         } catch (InterruptedException e) {
@@ -92,13 +88,12 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public void grantPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds) {
-        var redisKey = buildRedisKeyBySharedUserPermission(permission);
 
         var ids = userIds.getValues();
 
         try {
             asyncReadConnection.async()
-                               .sadd(redisKey, ids.toArray(new UUID[0]))
+                               .sadd(permission, ids.toArray(new UUID[0]))
                                .get();
 
         } catch (InterruptedException e) {
@@ -111,9 +106,5 @@ public class RedisSharedUserPermissionRepository
         } catch (RedisException e) {
             throw new SharedSessionException(e);
         }
-    }
-
-    protected String buildRedisKeyBySharedUserPermission(SharedUserPermission permission) {
-        return KEY_PREFIX + ":" + permission;
     }
 }

@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.redis.codec;
+package ru.udya.sharedsession.redis.permission.codec;
 
 import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import io.lettuce.core.codec.RedisCodec;

@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.repository;
+package ru.udya.sharedsession.permission.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.entity.contracts.Ids;
