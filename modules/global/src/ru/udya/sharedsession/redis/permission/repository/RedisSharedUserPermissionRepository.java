@@ -7,13 +7,13 @@ import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.StatefulRedisConnection;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
-import ru.udya.sharedsession.repository.SharedUserSession;
 
 import javax.annotation.PostConstruct;
 import java.util.List;

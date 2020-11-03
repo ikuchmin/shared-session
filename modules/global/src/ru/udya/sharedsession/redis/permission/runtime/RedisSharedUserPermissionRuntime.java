@@ -4,6 +4,7 @@ import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
@@ -12,7 +13,6 @@ import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
-import ru.udya.sharedsession.repository.SharedUserSession;
 
 import java.util.List;
 import java.util.UUID;

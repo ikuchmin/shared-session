@@ -2,6 +2,7 @@ package ru.udya.sharedsession.redis;
 
 import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.cuba.core.entity.contracts.Id;
+import com.haulmont.cuba.core.global.UuidProvider;
 import com.haulmont.cuba.security.entity.Access;
 import com.haulmont.cuba.security.entity.EntityAttrAccess;
 import com.haulmont.cuba.security.entity.EntityOp;
@@ -20,6 +21,7 @@ import io.lettuce.core.codec.RedisCodec;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.cache.SharedUserSessionCache;
+import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
@@ -29,7 +31,6 @@ import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
-import ru.udya.sharedsession.repository.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import javax.annotation.Nullable;
@@ -103,7 +104,7 @@ public class RedisSharedUserSessionRepository
     @Override
     public UserSession findById(Serializable id) {
         // todo check that session is exist
-        return new RedisSharedUserSession(id);
+        return new RedisSharedUserSession((String) id);
     }
 
     @Override
@@ -158,6 +159,11 @@ public class RedisSharedUserSessionRepository
         return createSharedUserSessionKey(userSession.getUser().getId(), userSession.getId());
     }
 
+    protected UUID extractUserSessionIdFromSharedUserSessionKey(String sharedUserSessionKey) {
+        var sessionKeyParts = sharedUserSessionKey.split(":");
+        return UuidProvider.fromString(sessionKeyParts[3]);
+    }
+
     protected class RedisSharedUserSession extends UserSession
             implements SharedUserSession {
 
@@ -167,6 +173,11 @@ public class RedisSharedUserSessionRepository
 
         // use delegate to apply side-effects in getter/setter UserSession
         protected UserSession delegate;
+
+        public RedisSharedUserSession(String sharedId) {
+            this.sharedId = sharedId;
+            this.id = extractUserSessionIdFromSharedUserSessionKey(sharedId);
+        }
 
         public RedisSharedUserSession(Id<User, UUID> userId, UUID sessionId) {
             this.id = sessionId;
@@ -189,6 +200,7 @@ public class RedisSharedUserSessionRepository
                         .set(sharedId, delegate)
                         .get();
 
+                delegate.getJoinedRole().
                 sessionCache.saveInCache(sharedId, this);
 
             } catch (InterruptedException e) {
@@ -203,6 +215,7 @@ public class RedisSharedUserSessionRepository
             }
         }
 
+        @SuppressWarnings("UnusedReturnValue")
         protected UserSession safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
 
             try (StatefulRedisConnection<String, UserSession> writeConnection =

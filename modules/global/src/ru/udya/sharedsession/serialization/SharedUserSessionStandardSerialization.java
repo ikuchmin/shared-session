@@ -6,7 +6,7 @@ import com.haulmont.cuba.core.sys.serialization.StandardSerialization;
 import com.haulmont.cuba.security.auth.SimpleAuthenticationDetails;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.remoting.support.RemoteInvocationResult;
-import ru.udya.sharedsession.repository.SharedUserSession;
+import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import java.io.InputStream;

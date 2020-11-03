@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.repository;
+package ru.udya.sharedsession.domain;
 
 import java.io.Serializable;
 
