@@ -28,8 +28,12 @@ import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
 import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
+import ru.udya.sharedsession.permission.helper.CubaPermissionBuildHelper;
+import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentationHelper;
+import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentationHelper.CubaPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
@@ -47,7 +51,11 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toMap;
+
+// todo rename to Runtime and create real Repository
 @Component(SharedUserSessionRepository.NAME)
 public class RedisSharedUserSessionRepository
         implements SharedUserSessionRepository {
@@ -57,20 +65,29 @@ public class RedisSharedUserSessionRepository
     // shared:session:userId:sessionId
     public static final String KEY_PATTERN = KEY_PREFIX + "%s:%s";
 
-
-    protected SharedUserPermissionBuildHelper permissionConverter;
-
     protected RedisClient redisClient;
     protected SharedUserSessionCache sessionCache;
+
+    protected SharedUserPermissionBuildHelper sharedPermissionBuildHelper;
+    protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
+    protected CubaPermissionBuildHelper cubaPermissionBuildHelper;
+
     protected RedisSharedUserPermissionRuntime sharedUserPermissionRuntime;
+    protected RedisSharedUserPermissionRepository sharedUserPermissionRepository;
 
     protected RedisCodec<String, UserSession> objectRedisCodec;
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
     public RedisSharedUserSessionRepository(RedisClient redisClient,
-                                            SharedUserSessionCache sessionCache) {
+                                            SharedUserSessionCache sessionCache,
+                                            SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
+                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
+                                            RedisCodec<String, UserSession> objectRedisCodec) {
         this.redisClient = redisClient;
         this.sessionCache = sessionCache;
+        this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
+        this.sharedUserPermissionRuntime = sharedUserPermissionRuntime;
+        this.objectRedisCodec = objectRedisCodec;
     }
 
     @PostConstruct
@@ -108,9 +125,14 @@ public class RedisSharedUserSessionRepository
     }
 
     @Override
-    public List<UserSession> findAllUserSessions() {
+    public List<UserSession> findAll() {
         // todo implement
         return Collections.emptyList();
+    }
+
+    @Override
+    public List<UserSession> findAllByUser(Id<User, UUID> userId) {
+        throw new UnsupportedOperationException("Will be implemented later");
     }
 
     @Override
@@ -196,11 +218,20 @@ public class RedisSharedUserSessionRepository
 
         protected void save() {
             try {
-                asyncReadConnection.async()
-                        .set(sharedId, delegate)
-                        .get();
+                var roleDefinition = delegate.getJoinedRole();
 
-                delegate.getJoinedRole().
+                // clean role definition because it has additional support below
+                //noinspection ConstantConditions
+                delegate.setJoinedRole(null);
+                asyncReadConnection.async()
+                                   .set(sharedId, delegate)
+                                   .get();
+
+                var sharedUserPermissions = sharedPermissionBuildHelper
+                        .buildPermissionsByCubaRoleDefinition(roleDefinition);
+
+                sharedUserPermissionRuntime.grantPermissionsToUserSession(this, sharedUserPermissions);
+
                 sessionCache.saveInCache(sharedId, this);
 
             } catch (InterruptedException e) {
@@ -271,7 +302,7 @@ public class RedisSharedUserSessionRepository
 
         @Override
         public boolean isScreenPermitted(String windowAlias) {
-            var permission = permissionConverter
+            var permission = sharedPermissionBuildHelper
                     .buildPermissionByWindowAlias(windowAlias);
 
             return sharedUserPermissionRuntime
@@ -280,7 +311,7 @@ public class RedisSharedUserSessionRepository
 
         @Override
         public boolean isEntityOpPermitted(MetaClass metaClass, EntityOp entityOp) {
-            var permission = permissionConverter
+            var permission = sharedPermissionBuildHelper
                     .buildPermissionByEntity(metaClass, entityOp);
 
             return sharedUserPermissionRuntime
@@ -290,7 +321,7 @@ public class RedisSharedUserSessionRepository
         @Override
         public boolean isEntityAttrPermitted(MetaClass metaClass, String property,
                                              EntityAttrAccess access) {
-            var permission = permissionConverter
+            var permission = sharedPermissionBuildHelper
                     .buildPermissionByEntityAttribute(metaClass, property, access);
 
             return sharedUserPermissionRuntime
@@ -299,7 +330,7 @@ public class RedisSharedUserSessionRepository
 
         @Override
         public boolean isSpecificPermitted(String name) {
-            var permission = permissionConverter
+            var permission = sharedPermissionBuildHelper
                     .buildPermissionBySpecificPermission(name);
 
             return sharedUserPermissionRuntime
@@ -308,8 +339,8 @@ public class RedisSharedUserSessionRepository
 
         @Override
         public boolean isPermitted(PermissionType type, String target) {
-            var permission = permissionConverter
-                    .buildPermission(type, target);
+            var permission = sharedPermissionBuildHelper
+                    .buildPermissionByCubaTarget(type, target);
 
             return sharedUserPermissionRuntime
                     .isPermissionGrantedToUserSession(this, permission);
@@ -317,35 +348,110 @@ public class RedisSharedUserSessionRepository
 
         @Override
         public boolean isPermitted(PermissionType type, String target, int value) {
-            var permission = permissionConverter
-                    .buildPermission(type, target, value);
+            var permission = sharedPermissionBuildHelper
+                    .buildPermissionByCubaTarget(type, target, value);
 
             return sharedUserPermissionRuntime
                     .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
-        public Integer getPermissionValue(PermissionType type,
-                                          String target) {
-            return safeGettingValue(us -> us.delegate.getPermissionValue(type, target));
+        public Integer getPermissionValue(PermissionType type, String target) {
+            var sharedUserPermission = sharedPermissionBuildHelper
+                    .buildPermissionByCubaTarget(type, target);
+
+            var grantedToUserSession = sharedUserPermissionRuntime
+                    .isPermissionGrantedToUserSession(this, sharedUserPermission);
+
+            return grantedToUserSession ? 1 : 0;
         }
 
         @Override
-        public Map<String, Integer> getPermissionsByType(
-                PermissionType type) {
-            return safeGettingValue(us -> us.delegate.getPermissionsByType(type));
+        public Map<String, Integer> getPermissionsByType(PermissionType type) {
+
+            Stream<CubaPermission> cubaPermissions = Stream.empty();
+
+            switch (type) {
+                case SCREEN:
+                    var sharedUserScreenPermissions = sharedUserPermissionRepository
+                            .findAllScreenPermissionsByUserSession(this);
+
+                    cubaPermissions = sharedUserScreenPermissions
+                            .stream()
+                            .map(cubaPermissionStringRepresentationHelper
+                                         ::convertSharedUserScreenPermissionToCubaPermission);
+
+                    break;
+                case ENTITY_OP:
+                    var sharedUserEntityPermissions = sharedUserPermissionRepository
+                            .findAllEntityPermissionsByUserSession(this);
+
+                    cubaPermissions = sharedUserEntityPermissions
+                            .stream()
+                            .map(cubaPermissionStringRepresentationHelper
+                                         ::convertSharedUserEntityPermissionToCubaPermission);
+                    break;
+                case ENTITY_ATTR:
+                    var sharedUserEntityAttributePermissions = sharedUserPermissionRepository
+                            .findAllEntityAttributePermissionsByUserSession(this);
+
+                    cubaPermissions = sharedUserEntityAttributePermissions
+                            .stream()
+                            .map(cubaPermissionStringRepresentationHelper
+                                         ::convertSharedUserEntityAttributePermissionToCubaPermission);
+                    break;
+                case SPECIFIC:
+                    var sharedUserSpecificPermissions = sharedUserPermissionRepository
+                            .findAllSpecificPermissionsByUserSession(this);
+
+                    cubaPermissions = sharedUserSpecificPermissions
+                            .stream()
+                            .map(cubaPermissionStringRepresentationHelper
+                                         ::convertSharedUserSpecificPermissionToCubaPermission);
+                    break;
+                case UI:
+                    var sharedUserScreenElementPermissions = sharedUserPermissionRepository
+                            .findAllScreenElementPermissionsByUserSession(this);
+
+                    cubaPermissions = sharedUserScreenElementPermissions
+                            .stream()
+                            .map(cubaPermissionStringRepresentationHelper
+                                         ::convertSharedUserScreenElementPermissionToCubaPermission);
+
+                    break;
+            }
+
+            return cubaPermissions.collect(toMap(CubaPermission::getTarget, CubaPermission::getValue));
         }
 
 
         @Override
         public Access getPermissionUndefinedAccessPolicy() {
-            return safeGettingValue(us -> us.delegate.getPermissionUndefinedAccessPolicy());
+            return Access.DENY;
         }
 
         @Override
-        public void setPermissionUndefinedAccessPolicy(
-                Access permissionUndefinedAccessPolicy) {
-            safeUpdatingValue(us -> us.delegate.setPermissionUndefinedAccessPolicy(permissionUndefinedAccessPolicy));
+        public void setPermissionUndefinedAccessPolicy(Access permissionUndefinedAccessPolicy) {
+            // do noting, user can't change default access policy
+        }
+
+        @Override
+        public RoleDefinition getJoinedRole() {
+            var sharedUserPermissions = sharedUserPermissionRepository
+                    .findAllByUserSession(this);
+
+
+            return cubaPermissionBuildHelper
+                    .buildRoleDefinitionBySharedUserPermissions(sharedUserPermissions);
+        }
+
+        @Override
+        public void setJoinedRole(RoleDefinition joinedRole) {
+            var sharedUserPermissions = sharedPermissionBuildHelper
+                    .buildPermissionsByCubaRoleDefinition(joinedRole);
+
+            sharedUserPermissionRuntime
+                    .grantPermissionsToUserSession(this, sharedUserPermissions);
         }
 
         // boilerplate
@@ -450,16 +556,6 @@ public class RedisSharedUserSessionRepository
         @Override
         public boolean isSystem() {
             return safeGettingValue(us -> us.delegate.isSystem());
-        }
-
-        @Override
-        public RoleDefinition getJoinedRole() {
-            return safeGettingValue(us -> us.delegate.getJoinedRole());
-        }
-
-        @Override
-        public void setJoinedRole(RoleDefinition joinedRole) {
-            safeUpdatingValue(us -> us.delegate.setJoinedRole(joinedRole));
         }
 
         @Override

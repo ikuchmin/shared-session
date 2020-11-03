@@ -1,5 +1,6 @@
 package ru.udya.sharedsession.repository;
 
+import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.role.RoleDefinition;
@@ -35,7 +36,9 @@ public interface SharedUserSessionRepository {
 
     UserSession findById(Serializable id);
 
-    List<UserSession> findAllUserSessions();
+    List<UserSession> findAll();
+
+    List<UserSession> findAllByUser(Id<User, UUID> userId);
 
     void delete(UserSession session);
 

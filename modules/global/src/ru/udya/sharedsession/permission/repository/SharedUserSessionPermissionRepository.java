@@ -1,26 +1,36 @@
 package ru.udya.sharedsession.permission.repository;
 
-import com.haulmont.cuba.core.entity.contracts.Id;
-import com.haulmont.cuba.security.entity.User;
 import ru.udya.sharedsession.domain.SharedUserSession;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface SharedUserSessionPermissionRepository {
 
     String NAME = "ss_SharedUserSessionPermissionRepository";
 
-    List<SharedUserPermission> retrieveAllPermissionsForUserSession(SharedUserSession userSession);
+    List<SharedUserPermission> findAllByUserSession(SharedUserSession userSession);
 
-    List<SharedUserSession> retrieveAllUserSessionsByUser(Id<User, UUID> userId);
+    List<SharedUserEntityPermission> findAllEntityPermissionsByUserSession(SharedUserSession userSession);
 
-    boolean doesUserSessionHavePermission(SharedUserSession userSession, SharedUserPermission permission);
+    List<SharedUserEntityAttributePermission> findAllEntityAttributePermissionsByUserSession(SharedUserSession userSession);
 
-    List<Boolean> doesUserSessionHavePermissions(SharedUserSession userSession, List<? extends SharedUserPermission> permission);
+    List<SharedUserSpecificPermission> findAllSpecificPermissionsByUserSession(SharedUserSession userSession);
 
-    void addPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission);
+    List<SharedUserScreenPermission> findAllScreenPermissionsByUserSession(SharedUserSession userSession);
 
-    void addPermissionsToUserSession(SharedUserSession userSession, List<? extends SharedUserPermission> permission);
+    List<SharedUserScreenElementPermission> findAllScreenElementPermissionsByUserSession(SharedUserSession userSession);
+
+    boolean doesHavePermission(SharedUserSession userSession, SharedUserPermission permission);
+
+    List<Boolean> doesHavePermissions(SharedUserSession userSession, List<? extends SharedUserPermission> permission);
+
+    void addToUserSession(SharedUserSession userSession, SharedUserPermission permission);
+
+    void addToUserSession(SharedUserSession userSession, List<? extends SharedUserPermission> permission);
 }

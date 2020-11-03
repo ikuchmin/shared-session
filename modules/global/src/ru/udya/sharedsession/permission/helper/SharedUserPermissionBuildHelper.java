@@ -4,14 +4,21 @@ import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.cuba.security.entity.EntityAttrAccess;
 import com.haulmont.cuba.security.entity.EntityOp;
 import com.haulmont.cuba.security.entity.PermissionType;
-import com.haulmont.cuba.security.entity.ScreenComponentPermission;
+import com.haulmont.cuba.security.role.RoleDefinition;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDCARD;
 
 @Component("ss_SharedUserPermissionBuildHelper")
 public class SharedUserPermissionBuildHelper {
+
+    protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
 
     public SharedUserPermission buildPermissionByWindowAlias(String windowAlias) {
 
@@ -50,61 +57,70 @@ public class SharedUserPermissionBuildHelper {
         return SharedUserPermission.specificPermission(name, WILDCARD);
     }
 
-    public SharedUserPermission buildPermission(PermissionType type, String cubaTarget) {
-        return buildPermission(type, cubaTarget, 1);
+    public SharedUserPermission buildPermissionByCubaTarget(PermissionType type, String cubaTarget) {
+        return buildPermissionByCubaTarget(type, cubaTarget, 1);
     }
 
-    public SharedUserPermission buildPermission(PermissionType type, String cubaTarget, int value) {
+    public SharedUserPermission buildPermissionByCubaTarget(PermissionType type, String cubaTarget, int value) {
 
-        SharedUserPermission builtPermission;
-        switch (type) {
-            case SCREEN:
-                builtPermission = convertCubaScreenToSharedUserPermission(cubaTarget, value);
-                break;
-            case ENTITY_OP:
-                builtPermission = convertCubaEntityOpToSharedUserPermission(cubaTarget, value);
-                break;
-            case ENTITY_ATTR:
-                builtPermission = convertCubaEntityAttributeToSharedUserPermission(cubaTarget, value);
-                break;
-            case SPECIFIC:
-                builtPermission = convertCubaSpecificToSharedUserPermission(cubaTarget, value);
-                break;
-            case UI:
-                builtPermission = convertCubaUIToSharedUserPermission(cubaTarget, value);
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Permission type (%s) isn't supported", type));
-        }
-
-        return builtPermission;
+        return cubaPermissionStringRepresentationHelper
+                .convertCubaPermissionToSharedUserPermission(type, cubaTarget, value);
     }
 
-    protected SharedUserPermission convertCubaUIToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
-        return SharedUserPermission.screenElementPermission(targetParts[0], targetParts[1],
-                                                            ScreenComponentPermission.fromId(value)
-                                                                                     .name().toLowerCase());
-    }
+    public List<SharedUserPermission> buildPermissionsByCubaRoleDefinition(RoleDefinition roleDefinition) {
 
-    protected SharedUserPermission convertCubaSpecificToSharedUserPermission(String cubaTarget, int value) {
-        return SharedUserPermission.specificPermission(cubaTarget, WILDCARD);
-    }
+        var cubaEntityAllowPermissions = roleDefinition.entityPermissions()
+                                                       .getExplicitPermissions()
+                                                       .entrySet().stream()
+                                                       .filter(kv -> kv.getValue() > 0);
 
-    protected SharedUserPermission convertCubaScreenToSharedUserPermission(String cubaTarget, int value) {
-        return SharedUserPermission.screenPermission(cubaTarget, WILDCARD);
-    }
+        var sharedUserEntityPermissions = cubaEntityAllowPermissions
+                .map(p -> cubaPermissionStringRepresentationHelper
+                        .convertCubaEntityPermissionToSharedUserPermission(p.getKey(), p.getValue()));
 
-    protected SharedUserPermission convertCubaEntityOpToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
-        return SharedUserPermission.entityPermission(targetParts[0], WILDCARD, targetParts[1]);
-    }
+        var cubaEntityAttributePermissions = roleDefinition.entityAttributePermissions()
+                                                           .getExplicitPermissions()
+                                                           .entrySet().stream();
 
-    protected SharedUserPermission convertCubaEntityAttributeToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
-        return SharedUserPermission.entityAttributePermission(targetParts[0], WILDCARD,
-                                                              targetParts[1], WILDCARD,
-                                                              EntityAttrAccess.fromId(value)
-                                                                              .name().toLowerCase());
+        var sharedUserEntityAttributePermissions = cubaEntityAttributePermissions
+                .map(p -> cubaPermissionStringRepresentationHelper
+                        .convertCubaEntityAttributePermissionToSharedUserPermission(p.getKey(), p.getValue()));
+
+
+        var cubaSpecificAllowPermissions = roleDefinition.specificPermissions()
+                                                         .getExplicitPermissions()
+                                                         .entrySet().stream()
+                                                         .filter(kv -> kv.getValue() > 0);
+
+        var sharedUserSpecificPermissions = cubaSpecificAllowPermissions
+                .map(p -> cubaPermissionStringRepresentationHelper
+                        .convertCubaSpecificSpecificToSharedUserPermission(p.getKey(), p.getValue()));
+
+
+        var cubaScreenAllowPermissions = roleDefinition.screenPermissions()
+                                                       .getExplicitPermissions()
+                                                       .entrySet().stream()
+                                                       .filter(kv -> kv.getValue() > 0);
+
+        var sharedUserScreenPermissions = cubaScreenAllowPermissions
+                .map(p -> cubaPermissionStringRepresentationHelper
+                        .convertCubaScreenPermissionToSharedUserPermission(p.getKey(), p.getValue()));
+
+
+        var cubaScreenElementPermissions = roleDefinition.screenComponentPermissions()
+                                                         .getExplicitPermissions()
+                                                         .entrySet().stream();
+
+        var sharedUserScreenElementPermissions = cubaScreenElementPermissions
+                .map(p -> cubaPermissionStringRepresentationHelper
+                        .convertCubaUIPermissionToSharedUserPermission(p.getKey(), p.getValue()));
+
+        return Stream.of(sharedUserEntityPermissions,
+                             sharedUserEntityAttributePermissions,
+                             sharedUserSpecificPermissions,
+                             sharedUserScreenPermissions,
+                             sharedUserScreenElementPermissions)
+                     .flatMap(Function.identity())
+                     .collect(Collectors.toList());
     }
 }

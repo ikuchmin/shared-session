@@ -1,7 +1,5 @@
 package ru.udya.sharedsession.redis.permission.repository;
 
-import com.haulmont.cuba.core.entity.contracts.Id;
-import com.haulmont.cuba.security.entity.User;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
@@ -11,13 +9,17 @@ import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
+import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
+import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Component(SharedUserSessionPermissionRepository.NAME)
@@ -45,17 +47,42 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public List<SharedUserPermission> retrieveAllPermissionsForUserSession(SharedUserSession userSession) {
+    public List<SharedUserPermission> findAllByUserSession(SharedUserSession userSession) {
         throw new UnsupportedOperationException("Will be implemented later");
     }
 
     @Override
-    public List<SharedUserSession> retrieveAllUserSessionsByUser(Id<User, UUID> userId) {
-        throw new UnsupportedOperationException("Will be implemented later");
+    public List<SharedUserEntityPermission> findAllEntityPermissionsByUserSession(
+            SharedUserSession userSession) {
+        return null;
     }
 
     @Override
-    public boolean doesUserSessionHavePermission(SharedUserSession userSession, SharedUserPermission permission) {
+    public List<SharedUserEntityAttributePermission> findAllEntityAttributePermissionsByUserSession(
+            SharedUserSession userSession) {
+        return null;
+    }
+
+    @Override
+    public List<SharedUserSpecificPermission> findAllSpecificPermissionsByUserSession(
+            SharedUserSession userSession) {
+        return null;
+    }
+
+    @Override
+    public List<SharedUserScreenPermission> findAllScreenPermissionsByUserSession(
+            SharedUserSession userSession) {
+        return null;
+    }
+
+    @Override
+    public List<SharedUserScreenElementPermission> findAllScreenElementPermissionsByUserSession(
+            SharedUserSession userSession) {
+        return null;
+    }
+
+    @Override
+    public boolean doesHavePermission(SharedUserSession userSession, SharedUserPermission permission) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
@@ -77,13 +104,13 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public List<Boolean> doesUserSessionHavePermissions(SharedUserSession userSession,
-                                                        List<? extends SharedUserPermission> permission) {
+    public List<Boolean> doesHavePermissions(SharedUserSession userSession,
+                                             List<? extends SharedUserPermission> permission) {
         throw new UnsupportedOperationException("Will be implemented later");
     }
 
     @Override
-    public void addPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+    public void addToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
@@ -105,8 +132,8 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void addPermissionsToUserSession(SharedUserSession userSession,
-                                            List<? extends SharedUserPermission> permission) {
+    public void addToUserSession(SharedUserSession userSession,
+                                 List<? extends SharedUserPermission> permission) {
 
     }
 

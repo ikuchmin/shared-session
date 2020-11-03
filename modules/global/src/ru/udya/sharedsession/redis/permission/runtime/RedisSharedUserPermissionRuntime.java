@@ -49,7 +49,7 @@ public class RedisSharedUserPermissionRuntime
 
         for (SharedUserPermission perm : permissions) {
             var isGranted = sessionPermissionRepository
-                    .doesUserSessionHavePermission(userSession, perm);
+                    .doesHavePermission(userSession, perm);
 
             if (isGranted) {
                 return true;
