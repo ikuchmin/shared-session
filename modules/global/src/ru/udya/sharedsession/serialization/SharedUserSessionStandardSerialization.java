@@ -11,7 +11,7 @@ import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.UUID;
+import java.io.Serializable;
 
 public class SharedUserSessionStandardSerialization
         extends StandardSerialization
@@ -52,12 +52,12 @@ public class SharedUserSessionStandardSerialization
     }
 
     protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSession sharedUserSession) {
-        UUID sessionId = sharedUserSession.getId();
+        Serializable sessionId = sharedUserSession.getSharedId();
 
         SharedUserSessionHolder userSessionHolder =
                 new SharedUserSessionHolder();
 
-        userSessionHolder.setId(sessionId);
+        userSessionHolder.setSharedId(sessionId);
 
         return userSessionHolder;
     }
@@ -96,7 +96,7 @@ public class SharedUserSessionStandardSerialization
 
     public UserSession fetchSharedUserSessionByHolder(SharedUserSessionHolder sharedUserSessionHolder) {
 
-        UUID sessionId = sharedUserSessionHolder.getId();
+        Serializable sessionId = sharedUserSessionHolder.getSharedId();
 
         // we don't cache the result because it is fast as is
         // there is we exploit idea that serialization is performed into initialized spring context

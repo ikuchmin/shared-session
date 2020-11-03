@@ -1,7 +1,6 @@
 package ru.udya.sharedsession.redis.permission.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
-import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
@@ -12,22 +11,25 @@ import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
-import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
+import ru.udya.sharedsession.repository.SharedUserSession;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-@Component(SharedUserPermissionRepository.NAME)
+@Component(SharedUserSessionPermissionRepository.NAME)
 public class RedisSharedUserPermissionRepository
-        implements SharedUserPermissionRepository {
+        implements SharedUserSessionPermissionRepository {
+
+    public static final String PERMISSION_SUFFIX = "permissions";
 
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
 
-    protected StatefulRedisConnection<SharedUserPermission, UUID> asyncReadConnection;
+    protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
 
 
     public RedisSharedUserPermissionRepository(RedisClient redisClient,
@@ -43,16 +45,23 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public List<String> retrieveAllPermissionsForUser(Id<User, UUID> userUUIDId) {
+    public List<SharedUserPermission> retrieveAllPermissionsForUserSession(SharedUserSession userSession) {
         throw new UnsupportedOperationException("Will be implemented later");
     }
 
     @Override
-    public boolean isUserHasPermission(Id<User, UUID> userId, SharedUserPermission permission) {
+    public List<SharedUserSession> retrieveAllUserSessionsByUser(Id<User, UUID> userId) {
+        throw new UnsupportedOperationException("Will be implemented later");
+    }
+
+    @Override
+    public boolean doesUserSessionHavePermission(SharedUserSession userSession, SharedUserPermission permission) {
+
+        var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
             return asyncReadConnection.async()
-                                      .sismember(permission, userId.getValue())
+                                      .sismember(redisKey, permission)
                                       .get();
 
         } catch (InterruptedException e) {
@@ -68,11 +77,19 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void addPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+    public List<Boolean> doesUserSessionHavePermissions(SharedUserSession userSession,
+                                                        List<? extends SharedUserPermission> permission) {
+        throw new UnsupportedOperationException("Will be implemented later");
+    }
+
+    @Override
+    public void addPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+
+        var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
             asyncReadConnection.async()
-                               .sadd(permission, userId.getValue())
+                               .sadd(redisKey, permission)
                                .get();
 
         } catch (InterruptedException e) {
@@ -88,24 +105,12 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void addPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds) {
+    public void addPermissionsToUserSession(SharedUserSession userSession,
+                                            List<? extends SharedUserPermission> permission) {
 
-        var ids = userIds.getValues();
+    }
 
-        try {
-            asyncReadConnection.async()
-                               .sadd(permission, ids.toArray(new UUID[0]))
-                               .get();
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SharedSessionReadingException("Thread is interrupted by external process during granting permission to user", e);
-        } catch (ExecutionException e) {
-            throw new SharedSessionReadingException("Exception during granting permission to user", e);
-        } catch (RedisCommandTimeoutException e) {
-            throw new SharedSessionTimeoutException(e);
-        } catch (RedisException e) {
-            throw new SharedSessionException(e);
-        }
+    protected String createSharedUserSessionPermissionKey(SharedUserSession sharedUserSession) {
+        return sharedUserSession.getSharedId() + ":" + PERMISSION_SUFFIX;
     }
 }

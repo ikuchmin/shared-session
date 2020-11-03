@@ -4,6 +4,7 @@ import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.role.RoleDefinition;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -32,7 +33,7 @@ public interface SharedUserSessionRepository {
 
     void save(UserSession session);
 
-    UserSession findById(UUID id);
+    UserSession findById(Serializable id);
 
     List<UserSession> findAllUserSessions();
 

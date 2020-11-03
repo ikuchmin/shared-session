@@ -1,8 +1,8 @@
 package ru.udya.sharedsession.repository;
 
-import java.util.UUID;
+import java.io.Serializable;
 
 public interface SharedUserSession {
 
-    UUID getId();
+    Serializable getSharedId();
 }

@@ -27,8 +27,8 @@ import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
-import ru.udya.sharedsession.permission.runtime.SharedUserPermissionRuntime;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
+import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
 import ru.udya.sharedsession.repository.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
@@ -53,11 +53,15 @@ public class RedisSharedUserSessionRepository
 
     public static final String KEY_PREFIX = "shared:session";
 
+    // shared:session:userId:sessionId
+    public static final String KEY_PATTERN = KEY_PREFIX + "%s:%s";
+
+
     protected SharedUserPermissionBuildHelper permissionConverter;
 
     protected RedisClient redisClient;
     protected SharedUserSessionCache sessionCache;
-    protected SharedUserPermissionRuntime sharedUserPermissionRuntime;
+    protected RedisSharedUserPermissionRuntime sharedUserPermissionRuntime;
 
     protected RedisCodec<String, UserSession> objectRedisCodec;
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
@@ -97,7 +101,7 @@ public class RedisSharedUserSessionRepository
     }
 
     @Override
-    public UserSession findById(UUID id) {
+    public UserSession findById(Serializable id) {
         // todo check that session is exist
         return new RedisSharedUserSession(id);
     }
@@ -145,8 +149,13 @@ public class RedisSharedUserSessionRepository
         }
     }
 
-    protected String createSessionKey(UUID id) {
-        return KEY_PREFIX + ":" + id;
+    // don't use Id<> because it is internal API
+    protected String createSharedUserSessionKey(UUID userId, UUID sessionId) {
+        return String.format(KEY_PATTERN, userId, sessionId);
+    }
+
+    protected String createSharedUserSessionKey(UserSession userSession) {
+        return createSharedUserSessionKey(userSession.getUser().getId(), userSession.getId());
     }
 
     protected class RedisSharedUserSession extends UserSession
@@ -154,33 +163,33 @@ public class RedisSharedUserSessionRepository
 
         private static final long serialVersionUID = 453371678445414846L;
 
-        protected String sessionKey;
+        protected String sharedId;
 
         // use delegate to apply side-effects in getter/setter UserSession
         protected UserSession delegate;
 
-        public RedisSharedUserSession(UUID id) {
-            this.id = id;
-            this.sessionKey = createSessionKey(id);
+        public RedisSharedUserSession(Id<User, UUID> userId, UUID sessionId) {
+            this.id = sessionId;
+            this.sharedId = createSharedUserSessionKey(userId.getValue(), sessionId);
         }
 
         public RedisSharedUserSession(UserSession userSession) {
-            this(userSession, createSessionKey(userSession.getId()));
+            this(userSession, createSharedUserSessionKey(userSession));
         }
 
-        public RedisSharedUserSession(UserSession userSession, String sessionKey) {
+        public RedisSharedUserSession(UserSession userSession, String sharedId) {
             this.id = userSession.getId();
             this.delegate = userSession;
-            this.sessionKey = sessionKey;
+            this.sharedId = sharedId;
         }
 
         protected void save() {
             try {
                 asyncReadConnection.async()
-                        .set(sessionKey, delegate)
+                        .set(sharedId, delegate)
                         .get();
 
-                sessionCache.saveInCache(sessionKey, this);
+                sessionCache.saveInCache(sharedId, this);
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -201,32 +210,32 @@ public class RedisSharedUserSessionRepository
 
                 RedisCommands<String, UserSession> sync = writeConnection.sync();
 
-                sync.watch(sessionKey);
+                sync.watch(sharedId);
 
-                UserSession sessionFromRedis = sync.get(sessionKey);
+                UserSession sessionFromRedis = sync.get(sharedId);
                 if (sessionFromRedis == null) {
-                    throw new SharedSessionNotFoundException(String.format("Session isn't found in Redis storage (Key: %s)", sessionKey));
+                    throw new SharedSessionNotFoundException(String.format("Session isn't found in Redis storage (Key: %s)", sharedId));
                 }
 
                 RedisSharedUserSession updatedSharedUserSession =
-                        new RedisSharedUserSession(sessionFromRedis, sessionKey);
+                        new RedisSharedUserSession(sessionFromRedis, sharedId);
 
                 // apply setter
                 updateFn.accept(updatedSharedUserSession);
 
                 sync.multi();
-                sync.set(sessionKey, sessionFromRedis);
+                sync.set(sharedId, sessionFromRedis);
 
                 TransactionResult transactionResult = sync.exec();
                 if (transactionResult.wasDiscarded()) {
 
-                    sessionCache.removeFromCache(sessionKey);
+                    sessionCache.removeFromCache(sharedId);
 
                     throw new SharedSessionOptimisticLockException(
                             "Session changes can't be saved to Redis because someone changes session in Redis during transaction");
                 }
 
-                sessionCache.saveInCache(sessionKey, updatedSharedUserSession);
+                sessionCache.saveInCache(sharedId, updatedSharedUserSession);
 
                 return updatedSharedUserSession;
             } catch (RedisCommandTimeoutException e) {
@@ -239,7 +248,7 @@ public class RedisSharedUserSessionRepository
         protected <T> T safeGettingValue(Function<RedisSharedUserSession, T> getter) {
 
             RedisSharedUserSession sharedUserSession = sessionCache
-                    .getFromCacheBySessionKey(this.sessionKey,
+                    .getFromCacheBySessionKey(this.sharedId,
                             RedisSharedUserSessionRepository.this::findBySessionKeyNoCache);
 
             return getter.apply(sharedUserSession);
@@ -253,7 +262,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByWindowAlias(windowAlias);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -262,7 +271,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByEntity(metaClass, entityOp);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -272,7 +281,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByEntityAttribute(metaClass, property, access);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -281,7 +290,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionBySpecificPermission(name);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -289,9 +298,8 @@ public class RedisSharedUserSessionRepository
             var permission = permissionConverter
                     .buildPermission(type, target);
 
-
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -300,7 +308,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermission(type, target, value);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
+                    .isPermissionGrantedToUserSession(this, permission);
         }
 
         @Override
@@ -330,7 +338,7 @@ public class RedisSharedUserSessionRepository
         // boilerplate
 
         @Override
-        public UUID getId() {
+        public UUID getSharedId() {
             return this.id;
         }
 
@@ -454,8 +462,8 @@ public class RedisSharedUserSessionRepository
         @Override
         public String toString() {
             return "RedisSharedUserSession{" +
-                    "sessionKey='" + sessionKey + '\'' +
-                    "} ";
+                   "sessionKey='" + sharedId + '\'' +
+                   "} ";
         }
     }
 }
