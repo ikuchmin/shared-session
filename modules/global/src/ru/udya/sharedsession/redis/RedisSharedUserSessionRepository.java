@@ -27,10 +27,10 @@ import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
+import ru.udya.sharedsession.permission.runtime.SharedUserPermissionRuntime;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.repository.SharedUserSession;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
-import ru.udya.sharedsession.service.SharedUserPermissionRuntime;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
@@ -253,7 +253,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByWindowAlias(windowAlias);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override
@@ -262,7 +262,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByEntity(metaClass, entityOp);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override
@@ -272,7 +272,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionByEntityAttribute(metaClass, property, access);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override
@@ -281,7 +281,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermissionBySpecificPermission(name);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override
@@ -291,7 +291,7 @@ public class RedisSharedUserSessionRepository
 
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override
@@ -300,7 +300,7 @@ public class RedisSharedUserSessionRepository
                     .buildPermission(type, target, value);
 
             return sharedUserPermissionRuntime
-                    .isPermissionGrantedToUser(permission, Id.of(id, User.class));
+                    .isPermissionGrantedToUser(Id.of(id, User.class), permission);
         }
 
         @Override

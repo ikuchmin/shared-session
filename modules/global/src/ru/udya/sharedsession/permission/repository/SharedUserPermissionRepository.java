@@ -10,12 +10,14 @@ import java.util.UUID;
 
 public interface SharedUserPermissionRepository {
 
+    String NAME = "ss_SharedUserPermissionRepository";
+
     List<String> retrieveAllPermissionsForUser(Id<User, UUID> userId);
 
-    boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId);
+    boolean isUserHasPermission(Id<User, UUID> userId, SharedUserPermission permission);
 
-    void grantPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId);
+    void addPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId);
 
-    void grantPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds);
+    void addPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds);
 
 }

@@ -7,6 +7,7 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.StatefulRedisConnection;
+import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+@Component(SharedUserPermissionRepository.NAME)
 public class RedisSharedUserPermissionRepository
         implements SharedUserPermissionRepository {
 
@@ -42,12 +44,11 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<String> retrieveAllPermissionsForUser(Id<User, UUID> userUUIDId) {
-
-        return null;
+        throw new UnsupportedOperationException("Will be implemented later");
     }
 
     @Override
-    public boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+    public boolean isUserHasPermission(Id<User, UUID> userId, SharedUserPermission permission) {
 
         try {
             return asyncReadConnection.async()
@@ -67,7 +68,7 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void grantPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+    public void addPermissionToUser(SharedUserPermission permission, Id<User, UUID> userId) {
 
         try {
             asyncReadConnection.async()
@@ -87,7 +88,7 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void grantPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds) {
+    public void addPermissionToUsers(SharedUserPermission permission, Ids<User, UUID> userIds) {
 
         var ids = userIds.getValues();
 

@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.service;
+package ru.udya.sharedsession.redis.permission.runtime;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.security.entity.User;
@@ -10,6 +10,7 @@ import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.permission.runtime.SharedUserPermissionRuntime;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class RedisSharedUserPermissionRuntime
     protected SharedUserPermissionRepository sharedUserPermissionRepository;
 
     @Override
-    public boolean isPermissionGrantedToUser(SharedUserPermission permission, Id<User, UUID> userId) {
+    public boolean isPermissionGrantedToUser(Id<User, UUID> userId, SharedUserPermission permission) {
 
         // Redis implementation doesn't support so deep permissions
         if (permission instanceof SharedUserEntityAttributePermission
@@ -46,7 +47,7 @@ public class RedisSharedUserPermissionRuntime
 
         for (SharedUserPermission perm : permissions) {
             var isGranted = sharedUserPermissionRepository
-                    .isPermissionGrantedToUser(perm, userId);
+                    .isUserHasPermission(userId, perm);
 
             if (isGranted) {
                 return true;
