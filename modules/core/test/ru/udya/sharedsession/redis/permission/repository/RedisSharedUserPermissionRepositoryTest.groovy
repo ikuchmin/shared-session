@@ -1,14 +1,13 @@
 package ru.udya.sharedsession.redis.permission.repository
 
 import com.haulmont.cuba.core.global.AppBeans
-import com.haulmont.cuba.core.global.UserSessionSource
 import com.haulmont.cuba.core.global.UuidProvider
 import com.haulmont.cuba.security.entity.EntityAttrAccess
 import com.haulmont.cuba.security.entity.EntityOp
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.domain.SharedUserSession
+import ru.udya.sharedsession.domain.SharedUserSessionImpl
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
-import ru.udya.sharedsession.redis.RedisSharedUserSessionRepository
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
@@ -20,18 +19,12 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
 
     SharedUserSession sharedUserSession
 
-    RedisSharedUserSessionRepository redisSharedUserSessionRepository
-
-    UserSessionSource uss
-
     void setup() {
         def sharedUserSessionId = String.format(KEY_PATTERN, UuidProvider.createUuid(),
                                                 UuidProvider.createUuid())
 
         sharedUserSession = new SharedUserSessionImpl(sharedUserSessionId)
-        uss = AppBeans.get(UserSessionSource)
 
-        redisSharedUserSessionRepository = AppBeans.get(RedisSharedUserSessionRepository)
         testClass = AppBeans.get(RedisSharedUserPermissionRepository)
     }
 
@@ -126,19 +119,5 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
         specificPermissionsByUserSession == [specificPermission]
         screenPermissionsByUserSession == [screenPermission]
         screenElementPermissionsByUserSession == [screenElementPermission]
-    }
-
-    static class SharedUserSessionImpl implements SharedUserSession {
-
-        protected String sharedId
-
-        SharedUserSessionImpl(String sharedId) {
-            this.sharedId = sharedId
-        }
-
-        @Override
-        Serializable getSharedId() {
-            return this.sharedId
-        }
     }
 }
