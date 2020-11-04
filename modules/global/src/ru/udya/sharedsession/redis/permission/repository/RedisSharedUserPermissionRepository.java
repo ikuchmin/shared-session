@@ -3,6 +3,7 @@ package ru.udya.sharedsession.redis.permission.repository;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
+import io.lettuce.core.ScanArgs;
 import io.lettuce.core.api.StatefulRedisConnection;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.domain.SharedUserSession;
@@ -15,12 +16,16 @@ import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
+import ru.udya.sharedsession.permission.helper.SharedUserPermissionStringRepresentationHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Component(SharedUserSessionPermissionRepository.NAME)
 public class RedisSharedUserPermissionRepository
@@ -30,14 +35,17 @@ public class RedisSharedUserPermissionRepository
 
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
+    protected SharedUserPermissionStringRepresentationHelper stringRepresentationHelper;
 
     protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
 
 
     public RedisSharedUserPermissionRepository(RedisClient redisClient,
-                                               RedisSharedUserPermissionCodec userPermissionCodec) {
+                                               RedisSharedUserPermissionCodec userPermissionCodec,
+                                               SharedUserPermissionStringRepresentationHelper stringRepresentationHelper) {
         this.redisClient = redisClient;
         this.userPermissionCodec = userPermissionCodec;
+        this.stringRepresentationHelper = stringRepresentationHelper;
     }
 
     @PostConstruct
@@ -48,38 +56,101 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserPermission> findAllByUserSession(SharedUserSession userSession) {
-        throw new UnsupportedOperationException("Will be implemented later");
+
+        var redisKey = createSharedUserSessionPermissionKey(userSession);
+
+        try {
+            var readedPermissions = asyncReadConnection.async()
+                                                           .smembers(redisKey)
+                                                           .get();
+
+            return new ArrayList<>(readedPermissions);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user permission", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during getting user permission", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
     }
 
     @Override
     public List<SharedUserEntityPermission> findAllEntityPermissionsByUserSession(
             SharedUserSession userSession) {
-        return null;
+
+        return internalFindPermissionsByUserSessionAndType(
+                userSession, SharedUserEntityPermission.class);
     }
 
     @Override
     public List<SharedUserEntityAttributePermission> findAllEntityAttributePermissionsByUserSession(
             SharedUserSession userSession) {
-        return null;
+
+        return internalFindPermissionsByUserSessionAndType
+                (userSession, SharedUserEntityAttributePermission.class);
     }
 
     @Override
     public List<SharedUserSpecificPermission> findAllSpecificPermissionsByUserSession(
             SharedUserSession userSession) {
-        return null;
+
+        return internalFindPermissionsByUserSessionAndType(
+                userSession, SharedUserSpecificPermission.class);
     }
 
     @Override
     public List<SharedUserScreenPermission> findAllScreenPermissionsByUserSession(
             SharedUserSession userSession) {
-        return null;
+
+        return internalFindPermissionsByUserSessionAndType(
+                userSession, SharedUserScreenPermission.class);
     }
 
     @Override
     public List<SharedUserScreenElementPermission> findAllScreenElementPermissionsByUserSession(
             SharedUserSession userSession) {
-        return null;
+
+        return internalFindPermissionsByUserSessionAndType(
+                userSession, SharedUserScreenElementPermission.class);
     }
+
+    public <T extends SharedUserPermission> List<T> internalFindPermissionsByUserSessionAndType(
+            SharedUserSession userSession, Class<T> permissionType) {
+
+        var redisKey = createSharedUserSessionPermissionKey(userSession);
+
+        try {
+            String typePrefix = stringRepresentationHelper
+                    .defineTypeStringPrefixByPermissionType(permissionType);
+
+            var matches = ScanArgs.Builder.matches(typePrefix + "*");
+
+            var cursor = asyncReadConnection.async()
+                                            .sscan(redisKey, matches)
+                                            .get();
+
+
+            //noinspection unchecked
+            return cursor.getValues().stream()
+                         .map(p -> (T) p)
+                         .collect(Collectors.toList());
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user permission", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during getting user permissions", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
+    }
+
 
     @Override
     public boolean doesHavePermission(SharedUserSession userSession, SharedUserPermission permission) {
@@ -93,9 +164,9 @@ public class RedisSharedUserPermissionRepository
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user permission", e);
+            throw new SharedSessionReadingException("Thread is interrupted by external process during checking user has permission", e);
         } catch (ExecutionException e) {
-            throw new SharedSessionReadingException("Exception during getting user permission", e);
+            throw new SharedSessionReadingException("Exception during checking user has permission", e);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
@@ -118,9 +189,9 @@ public class RedisSharedUserPermissionRepository
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user permission", e);
+            throw new SharedSessionReadingException("Thread is interrupted by external process during checking user has permissions", e);
         } catch (ExecutionException e) {
-            throw new SharedSessionReadingException("Exception during getting user permission", e);
+            throw new SharedSessionReadingException("Exception during checking user has permissions", e);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
@@ -130,29 +201,32 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public void addToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+        this.addToUserSession(userSession, Collections.singletonList(permission));
+    }
+
+    @Override
+    public void addToUserSession(SharedUserSession userSession,
+                                 List<? extends SharedUserPermission> permissions) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
+            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
+
             asyncReadConnection.async()
-                               .sadd(redisKey, permission)
+                               .sadd(redisKey, permissionsArray)
                                .get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SharedSessionReadingException("Thread is interrupted by external process during granting permission to user", e);
+            throw new SharedSessionReadingException("Thread is interrupted by external process during adding permissions to user", e);
         } catch (ExecutionException e) {
-            throw new SharedSessionReadingException("Exception during granting permission to user", e);
+            throw new SharedSessionReadingException("Exception during adding permissions to user", e);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
             throw new SharedSessionException(e);
         }
-    }
-
-    @Override
-    public void addToUserSession(SharedUserSession userSession,
-                                 List<? extends SharedUserPermission> permission) {
 
     }
 
