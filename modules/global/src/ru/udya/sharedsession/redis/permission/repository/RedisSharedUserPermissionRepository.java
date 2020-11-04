@@ -127,7 +127,7 @@ public class RedisSharedUserPermissionRepository
             String typePrefix = stringRepresentationHelper
                     .defineTypeStringPrefixByPermissionType(permissionType);
 
-            var matches = ScanArgs.Builder.matches(typePrefix + "*");
+            var matches = ScanArgs.Builder.matches(typePrefix + ":*");
 
             var cursor = asyncReadConnection.async()
                                             .sscan(redisKey, matches)
@@ -178,25 +178,30 @@ public class RedisSharedUserPermissionRepository
     public List<Boolean> doesHavePermissions(SharedUserSession userSession,
                                              List<? extends SharedUserPermission> permissions) {
 
-        var redisKey = createSharedUserSessionPermissionKey(userSession);
+        return permissions.stream()
+                          .map(p -> doesHavePermission(userSession, p))
+                          .collect(Collectors.toList());
 
-        try {
-            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
-
-            return asyncReadConnection.async()
-                                      .smismember(redisKey, permissionsArray)
-                                      .get();
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SharedSessionReadingException("Thread is interrupted by external process during checking user has permissions", e);
-        } catch (ExecutionException e) {
-            throw new SharedSessionReadingException("Exception during checking user has permissions", e);
-        } catch (RedisCommandTimeoutException e) {
-            throw new SharedSessionTimeoutException(e);
-        } catch (RedisException e) {
-            throw new SharedSessionException(e);
-        }
+        // todo use this when redis 6.2.0 will be released
+//        var redisKey = createSharedUserSessionPermissionKey(userSession);
+//
+//        try {
+//            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
+//
+//            return asyncReadConnection.async()
+//                                      .smismember(redisKey, permissionsArray)
+//                                      .get();
+//
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//            throw new SharedSessionReadingException("Thread is interrupted by external process during checking user has permissions", e);
+//        } catch (ExecutionException e) {
+//            throw new SharedSessionReadingException("Exception during checking user has permissions", e);
+//        } catch (RedisCommandTimeoutException e) {
+//            throw new SharedSessionTimeoutException(e);
+//        } catch (RedisException e) {
+//            throw new SharedSessionException(e);
+//        }
     }
 
     @Override

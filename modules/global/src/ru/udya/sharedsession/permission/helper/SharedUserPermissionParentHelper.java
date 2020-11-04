@@ -2,6 +2,7 @@ package ru.udya.sharedsession.permission.helper;
 
 import com.haulmont.cuba.security.entity.EntityAttrAccess;
 import com.haulmont.cuba.security.entity.ScreenComponentPermission;
+import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
@@ -21,6 +22,7 @@ import static io.vavr.API.Match;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.entityAttributePermission;
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.screenElementPermission;
 
+@Component("ss_SharedUserPermissionParentHelper")
 public class SharedUserPermissionParentHelper {
 
     protected SharedUserPermissionWildcardHelper wildcardHelper;

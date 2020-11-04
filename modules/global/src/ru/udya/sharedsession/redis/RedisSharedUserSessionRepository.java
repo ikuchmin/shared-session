@@ -2,6 +2,7 @@ package ru.udya.sharedsession.redis;
 
 import com.haulmont.chile.core.model.MetaClass;
 import com.haulmont.cuba.core.entity.contracts.Id;
+import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.core.global.UuidProvider;
 import com.haulmont.cuba.security.entity.Access;
 import com.haulmont.cuba.security.entity.EntityAttrAccess;
@@ -63,7 +64,7 @@ public class RedisSharedUserSessionRepository
     public static final String KEY_PREFIX = "shared:session";
 
     // shared:session:userId:sessionId
-    public static final String KEY_PATTERN = KEY_PREFIX + "%s:%s";
+    public static final String KEY_PATTERN = KEY_PREFIX + ":" + "%s:%s";
 
     protected RedisClient redisClient;
     protected SharedUserSessionCache sessionCache;
@@ -81,13 +82,11 @@ public class RedisSharedUserSessionRepository
     public RedisSharedUserSessionRepository(RedisClient redisClient,
                                             SharedUserSessionCache sessionCache,
                                             SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
-                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
-                                            RedisCodec<String, UserSession> objectRedisCodec) {
+                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime) {
         this.redisClient = redisClient;
         this.sessionCache = sessionCache;
         this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
         this.sharedUserPermissionRuntime = sharedUserPermissionRuntime;
-        this.objectRedisCodec = objectRedisCodec;
     }
 
     @PostConstruct
@@ -133,6 +132,12 @@ public class RedisSharedUserSessionRepository
     @Override
     public List<SharedUserSession> findAllByUser(Id<User, UUID> userId) {
         throw new UnsupportedOperationException("Will be implemented later");
+    }
+
+    @Override
+    public List<SharedUserSession> findAllByUsers(Ids<User, UUID> userId) {
+        // todo implement
+        return Collections.emptyList();
     }
 
     @Override

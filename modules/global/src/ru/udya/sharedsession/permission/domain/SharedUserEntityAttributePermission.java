@@ -51,4 +51,39 @@ public class SharedUserEntityAttributePermission implements SharedUserPermission
     public void setOperation(String operation) {
         this.operation = operation;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+
+        SharedUserEntityAttributePermission that = (SharedUserEntityAttributePermission) o;
+
+        if (! entityType.equals(that.entityType)) { return false; }
+        if (! entityId.equals(that.entityId)) { return false; }
+        if (! entityAttribute.equals(that.entityAttribute)) { return false; }
+        if (! entityAttributeValue.equals(that.entityAttributeValue)) { return false; }
+        return operation.equals(that.operation);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = entityType.hashCode();
+        result = 31 * result + entityId.hashCode();
+        result = 31 * result + entityAttribute.hashCode();
+        result = 31 * result + entityAttributeValue.hashCode();
+        result = 31 * result + operation.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "SharedUserEntityAttributePermission{" +
+               "entityType='" + entityType + '\'' +
+               ", entityId='" + entityId + '\'' +
+               ", entityAttribute='" + entityAttribute + '\'' +
+               ", entityAttributeValue='" + entityAttributeValue + '\'' +
+               ", operation='" + operation + '\'' +
+               '}';
+    }
 }

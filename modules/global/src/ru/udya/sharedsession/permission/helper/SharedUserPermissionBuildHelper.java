@@ -115,12 +115,15 @@ public class SharedUserPermissionBuildHelper {
                 .map(p -> cubaPermissionStringRepresentationHelper
                         .convertCubaUIPermissionToSharedUserPermission(p.getKey(), p.getValue()));
 
+        // manual cast resolve compilation problem don't delete it
+        //noinspection RedundantCast
         return Stream.of(sharedUserEntityPermissions,
-                             sharedUserEntityAttributePermissions,
-                             sharedUserSpecificPermissions,
-                             sharedUserScreenPermissions,
-                             sharedUserScreenElementPermissions)
+                         sharedUserEntityAttributePermissions,
+                         sharedUserSpecificPermissions,
+                         sharedUserScreenPermissions,
+                         sharedUserScreenElementPermissions)
                      .flatMap(Function.identity())
+                     .map(p -> (SharedUserPermission) p)
                      .collect(Collectors.toList());
     }
 }

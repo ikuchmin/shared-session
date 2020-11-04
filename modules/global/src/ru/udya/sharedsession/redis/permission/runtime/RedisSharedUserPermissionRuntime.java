@@ -30,12 +30,14 @@ public class RedisSharedUserPermissionRuntime
 
 
     public RedisSharedUserPermissionRuntime(SharedUserPermissionParentHelper permissionParentHelper,
-                                            SharedUserSessionRepository sessionRepository,
                                             SharedUserSessionPermissionRepository sessionPermissionRepository) {
 
         this.permissionParentHelper = permissionParentHelper;
-        this.sessionRepository = sessionRepository;
         this.sessionPermissionRepository = sessionPermissionRepository;
+    }
+
+    public void setSessionRepository(SharedUserSessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
     }
 
     @Override
