@@ -1,9 +1,11 @@
 package ru.udya.sharedsession.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
+import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.role.RoleDefinition;
+import ru.udya.sharedsession.domain.SharedUserSession;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -38,7 +40,9 @@ public interface SharedUserSessionRepository {
 
     List<UserSession> findAll();
 
-    List<UserSession> findAllByUser(Id<User, UUID> userId);
+    List<SharedUserSession> findAllByUser(Id<User, UUID> userId);
+
+    List<SharedUserSession> findAllByUsers(Ids<User, UUID> userId);
 
     void delete(UserSession session);
 

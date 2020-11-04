@@ -105,8 +105,27 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<Boolean> doesHavePermissions(SharedUserSession userSession,
-                                             List<? extends SharedUserPermission> permission) {
-        throw new UnsupportedOperationException("Will be implemented later");
+                                             List<? extends SharedUserPermission> permissions) {
+
+        var redisKey = createSharedUserSessionPermissionKey(userSession);
+
+        try {
+            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
+
+            return asyncReadConnection.async()
+                                      .smismember(redisKey, permissionsArray)
+                                      .get();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user permission", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during getting user permission", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
     }
 
     @Override

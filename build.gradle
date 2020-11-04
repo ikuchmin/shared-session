@@ -74,7 +74,7 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     }
 
     dependencies {
-        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.0.0.RC1'
+        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.1.0.BUILD-SNAPSHOT'
         compile group: 'io.vavr', name: 'vavr', version: '0.10.3'
 
         testCompile('junit:junit:4.12')

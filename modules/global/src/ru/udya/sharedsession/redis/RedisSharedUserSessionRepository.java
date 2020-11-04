@@ -131,7 +131,7 @@ public class RedisSharedUserSessionRepository
     }
 
     @Override
-    public List<UserSession> findAllByUser(Id<User, UUID> userId) {
+    public List<SharedUserSession> findAllByUser(Id<User, UUID> userId) {
         throw new UnsupportedOperationException("Will be implemented later");
     }
 

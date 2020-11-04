@@ -13,6 +13,7 @@ import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
+import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,10 +29,12 @@ public class RedisSharedUserPermissionRuntime
     protected SharedUserPermissionWildcardHelper permissionWildcardHelper;
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
+    protected SharedUserSessionRepository sessionRepository;
     protected SharedUserSessionPermissionRepository sessionPermissionRepository;
 
     @Override
-    public boolean isPermissionGrantedToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+    public boolean isPermissionGrantedToUserSession(SharedUserSession userSession,
+                                                    SharedUserPermission permission) {
 
         // Redis implementation doesn't support so deep permissions
         if (permission instanceof SharedUserEntityAttributePermission
@@ -40,73 +43,116 @@ public class RedisSharedUserPermissionRuntime
             return true;
         }
 
-        List<SharedUserPermission> permissions =
+        var parentPermissions =
                 permissionParentHelper.calculateParentPermissions(permission);
 
-        permissions = Stream.concat(Stream.of(permission),
-                                    permissions.stream())
+        var allPermissions = Stream.concat(Stream.of(permission),
+                                        parentPermissions.stream())
                             .distinct().collect(toList());
 
-        for (SharedUserPermission perm : permissions) {
-            var isGranted = sessionPermissionRepository
-                    .doesHavePermission(userSession, perm);
+        var isGranted = sessionPermissionRepository
+                .doesHavePermissions(userSession, allPermissions);
 
-            if (isGranted) {
-                return true;
-            }
-        }
 
-        return false;
+        // if one of true then return true
+        return isGranted.stream().filter(g -> g).findAny().orElse(false);
     }
 
     @Override
     public boolean isPermissionsGrantedToUserSession(SharedUserSession userSession,
-                                                     List<SharedUserPermission> permission) {
-        return false;
+                                                     List<SharedUserPermission> permissions) {
+
+        // Redis implementation doesn't support so deep permissions
+        var supportedPermissions = permissions
+                .stream().filter(p -> ! (
+                        p instanceof SharedUserEntityAttributePermission
+                        || p instanceof SharedUserScreenElementPermission));
+
+
+        var parentPermissions = supportedPermissions
+                .flatMap(p -> permissionParentHelper.calculateParentPermissions(p).stream())
+                .distinct();
+
+        var allPermissions = Stream.concat(permissions.stream(),
+                                           parentPermissions)
+                                .distinct().collect(toList());
+
+        var isGranted = sessionPermissionRepository
+                .doesHavePermissions(userSession, allPermissions);
+
+        // if one of true then return true
+        return isGranted.stream().filter(g -> g).findAny().orElse(false);
     }
 
     @Override
     public void grantPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
-
+        sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
     public void grantPermissionsToUserSession(SharedUserSession userSession,
                                               List<? extends SharedUserPermission> permission) {
-
+        sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
-    public void grantPermissionToUserSessions(List<? extends SharedUserSession> userSession,
+    public void grantPermissionToUserSessions(List<? extends SharedUserSession> userSessions,
                                               SharedUserPermission permission) {
 
+        for (SharedUserSession userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permission);
+        }
     }
 
     @Override
-    public void grantPermissionsToUserSessions(List<? extends SharedUserSession> userSession,
-                                               List<? extends SharedUserPermission> permission) {
+    public void grantPermissionsToUserSessions(List<? extends SharedUserSession> userSessions,
+                                               List<? extends SharedUserPermission> permissions) {
 
+        for (SharedUserSession userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permissions);
+        }
     }
 
     @Override
     public void grantPermissionToAllUserSessions(Id<User, UUID> userId, SharedUserPermission permission) {
+        var userSessions = sessionRepository.findAllByUser(userId);
 
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permission);
+        }
     }
 
     @Override
     public void grantPermissionsToAllUserSessions(Id<User, UUID> userId,
-                                                  List<? extends SharedUserPermission> permission) {
+                                                  List<? extends SharedUserPermission> permissions) {
 
+        var userSessions = sessionRepository.findAllByUser(userId);
+
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permissions);
+        }
     }
 
     @Override
-    public void grantPermissionToAllUsersSessions(Ids<User, UUID> userIds, SharedUserPermission permission) {
+    public void grantPermissionToAllUsersSessions(Ids<User, UUID> userIds,
+                                                  SharedUserPermission permission) {
 
+        var userSessions = sessionRepository.findAllByUsers(userIds);
+
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permission);
+        }
     }
 
     @Override
     public void grantPermissionsToAllUsersSessions(Ids<User, UUID> userIds,
-                                                   List<? extends SharedUserPermission> permission) {
+                                                   List<? extends SharedUserPermission> permissions) {
+
+        var userSessions = sessionRepository.findAllByUsers(userIds);
+
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.addToUserSession(userSession, permissions);
+        }
 
     }
 }
