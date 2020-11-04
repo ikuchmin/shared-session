@@ -37,7 +37,7 @@ public class RedisSharedUserPermissionRepository
     protected RedisSharedUserPermissionCodec userPermissionCodec;
     protected SharedUserPermissionStringRepresentationHelper stringRepresentationHelper;
 
-    protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
+    protected StatefulRedisConnection<String, SharedUserPermission> asyncConnection;
 
 
     public RedisSharedUserPermissionRepository(RedisClient redisClient,
@@ -51,7 +51,7 @@ public class RedisSharedUserPermissionRepository
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        this.asyncReadConnection = redisClient.connect(userPermissionCodec);
+        this.asyncConnection = redisClient.connect(userPermissionCodec);
     }
 
     @Override
@@ -60,9 +60,9 @@ public class RedisSharedUserPermissionRepository
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
-            var readedPermissions = asyncReadConnection.async()
-                                                           .smembers(redisKey)
-                                                           .get();
+            var readedPermissions = asyncConnection.async()
+                                                   .smembers(redisKey)
+                                                   .get();
 
             return new ArrayList<>(readedPermissions);
 
@@ -129,9 +129,9 @@ public class RedisSharedUserPermissionRepository
 
             var matches = ScanArgs.Builder.matches(typePrefix + ":*");
 
-            var cursor = asyncReadConnection.async()
-                                            .sscan(redisKey, matches)
-                                            .get();
+            var cursor = asyncConnection.async()
+                                        .sscan(redisKey, matches)
+                                        .get();
 
 
             //noinspection unchecked
@@ -158,9 +158,9 @@ public class RedisSharedUserPermissionRepository
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
-            return asyncReadConnection.async()
-                                      .sismember(redisKey, permission)
-                                      .get();
+            return asyncConnection.async()
+                                  .sismember(redisKey, permission)
+                                  .get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -213,14 +213,20 @@ public class RedisSharedUserPermissionRepository
     public void addToUserSession(SharedUserSession userSession,
                                  List<? extends SharedUserPermission> permissions) {
 
+        // there is because lettuce can't
+        // work properly with empty collections
+        if (permissions.isEmpty()) {
+            return;
+        }
+
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
         try {
             var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
 
-            asyncReadConnection.async()
-                               .sadd(redisKey, permissionsArray)
-                               .get();
+            asyncConnection.async()
+                           .sadd(redisKey, permissionsArray)
+                           .get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

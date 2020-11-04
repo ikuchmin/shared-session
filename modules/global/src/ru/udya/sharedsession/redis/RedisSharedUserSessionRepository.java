@@ -82,11 +82,17 @@ public class RedisSharedUserSessionRepository
     public RedisSharedUserSessionRepository(RedisClient redisClient,
                                             SharedUserSessionCache sessionCache,
                                             SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
-                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime) {
+                                            CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper,
+                                            CubaPermissionBuildHelper cubaPermissionBuildHelper,
+                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
+                                            RedisSharedUserPermissionRepository sharedUserPermissionRepository) {
         this.redisClient = redisClient;
         this.sessionCache = sessionCache;
         this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
+        this.cubaPermissionStringRepresentationHelper = cubaPermissionStringRepresentationHelper;
+        this.cubaPermissionBuildHelper = cubaPermissionBuildHelper;
         this.sharedUserPermissionRuntime = sharedUserPermissionRuntime;
+        this.sharedUserPermissionRepository = sharedUserPermissionRepository;
     }
 
     @PostConstruct
@@ -462,8 +468,8 @@ public class RedisSharedUserSessionRepository
         // boilerplate
 
         @Override
-        public UUID getSharedId() {
-            return this.id;
+        public String getSharedId() {
+            return this.sharedId;
         }
 
         @Override

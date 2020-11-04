@@ -8,21 +8,31 @@ import io.lettuce.core.RedisClient
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.cache.Resp3BasedSharedUserSessionCache
 import ru.udya.sharedsession.cache.SharedUserSessionCache
+import ru.udya.sharedsession.permission.helper.CubaPermissionBuildHelper
+import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentationHelper
+import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
+import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime
 
 class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpecification {
     
     RedisSharedUserSessionRepository testClass
 
     UserSessionSource uss
-    RedisClient redisClient
+
     SharedUserSessionCache sharedUserSessionCache
 
     void setup() {
         uss = AppBeans.get(UserSessionSource)
-        redisClient = AppBeans.get(RedisClient)
         sharedUserSessionCache = AppBeans.get(SharedUserSessionCache)
 
-        testClass = Spy(RedisSharedUserSessionRepository, constructorArgs: [redisClient, sharedUserSessionCache])
+        testClass = Spy(RedisSharedUserSessionRepository,
+                        constructorArgs: [AppBeans.get(RedisClient), sharedUserSessionCache,
+                                          AppBeans.get(SharedUserPermissionBuildHelper),
+                                          AppBeans.get(CubaPermissionStringRepresentationHelper),
+                                          AppBeans.get(CubaPermissionBuildHelper),
+                                          AppBeans.get(RedisSharedUserPermissionRuntime),
+                                          AppBeans.get(RedisSharedUserPermissionRepository)])
         testClass.init()
     }
 
@@ -43,10 +53,11 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),
                 [], uss.getUserSession().getLocale(), false) // doesn't use default test user session because it has some hacks
 
-        testClass.createSession(us)
+        def createdSharedSession = testClass.createSession(us)
 
         when:
-        def redisSharedSession = testClass.findById(us.id)
+        print(createdSharedSession.sharedId)
+        def redisSharedSession = testClass.findById(createdSharedSession.sharedId)
 
         then:
         redisSharedSession.getLocale() == us.locale
@@ -57,13 +68,13 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),
                 [], uss.getUserSession().getLocale(), false) // doesn't use default test user session because it has some hacks
 
-        def rus = testClass.createSession(us)
+        def sharedUserSession = testClass.createSession(us)
 
         and: 'remove object from cache'
-        sharedUserSessionCache.removeFromCache(rus.sessionKey)
+        sharedUserSessionCache.removeFromCache(sharedUserSession.sharedId)
 
         when:
-        def redisSharedSession = testClass.findById(us.id)
+        def redisSharedSession = testClass.findById(sharedUserSession.sharedId)
 
         and: 'put session to the cache'
         redisSharedSession.getLocale()
@@ -80,17 +91,18 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),
                 [], uss.getUserSession().getLocale(), false) // doesn't use default test user session because it has some hacks
 
-        def rus = testClass.createSession(us)
+        def shardeUserSession = testClass.createSession(us)
 
         when:
-        rus.locale = null
+        shardeUserSession.locale = null
 
         then:
-        testClass.findBySessionKeyNoCache(rus.sessionKey).locale == null
+        testClass.findBySessionKeyNoCache(shardeUserSession.sharedId).locale == null
     }
 
     def "check that updating value flushing cache by invalidate message from Redis"() {
         given:
+        def redisClient = AppBeans.get(RedisClient)
         def overridedSharedUserSessionCache = new Resp3BasedSharedUserSessionCache(redisClient) {
             @Override
             void saveInCache(String sessionKey, UserSession userSession) {
@@ -99,26 +111,32 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         }
         overridedSharedUserSessionCache.init()
 
-        def overridedTestClass = new RedisSharedUserSessionRepository(redisClient, overridedSharedUserSessionCache)
+        def overridedTestClass = new RedisSharedUserSessionRepository(
+                redisClient, overridedSharedUserSessionCache,
+                AppBeans.get(SharedUserPermissionBuildHelper),
+                AppBeans.get(CubaPermissionStringRepresentationHelper),
+                AppBeans.get(CubaPermissionBuildHelper),
+                AppBeans.get(RedisSharedUserPermissionRuntime),
+                AppBeans.get(RedisSharedUserPermissionRepository))
         overridedTestClass.init()
 
         def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),
                 [], uss.getUserSession().getLocale(), false) // doesn't use default test user session because it has some hacks
 
         when:
-        def rus = overridedTestClass.createSession(us)
+        def sharedUserSession = overridedTestClass.createSession(us)
 
         then:
-        rus.locale == us.locale
+        sharedUserSession.locale == us.locale
 
         when:
-        rus.locale = null
+        sharedUserSession.locale = null
 
         and: 'waiting'
         Thread.sleep(200)
 
         then:
-        rus.locale == null
+        sharedUserSession.locale == null
 
         cleanup:
         overridedSharedUserSessionCache.close()
