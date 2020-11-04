@@ -8,9 +8,7 @@ import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
-import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
-import ru.udya.sharedsession.permission.helper.SharedUserPermissionWildcardHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
@@ -25,12 +23,20 @@ import static java.util.stream.Collectors.toList;
 public class RedisSharedUserPermissionRuntime
         implements SharedUserSessionPermissionRuntime {
 
-    protected SharedUserPermissionBuildHelper permissionHelper;
-    protected SharedUserPermissionWildcardHelper permissionWildcardHelper;
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
     protected SharedUserSessionRepository sessionRepository;
     protected SharedUserSessionPermissionRepository sessionPermissionRepository;
+
+
+    public RedisSharedUserPermissionRuntime(SharedUserPermissionParentHelper permissionParentHelper,
+                                            SharedUserSessionRepository sessionRepository,
+                                            SharedUserSessionPermissionRepository sessionPermissionRepository) {
+
+        this.permissionParentHelper = permissionParentHelper;
+        this.sessionRepository = sessionRepository;
+        this.sessionPermissionRepository = sessionPermissionRepository;
+    }
 
     @Override
     public boolean isPermissionGrantedToUserSession(SharedUserSession userSession,
