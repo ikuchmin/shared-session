@@ -16,7 +16,7 @@ import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionR
 
 class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpecification {
     
-    RedisSharedUserSessionRepository testClass
+    RedisSharedUserSessionRuntime testClass
 
     UserSessionSource uss
 
@@ -26,7 +26,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         uss = AppBeans.get(UserSessionSource)
         sharedUserSessionCache = AppBeans.get(SharedUserSessionCache)
 
-        testClass = Spy(RedisSharedUserSessionRepository,
+        testClass = Spy(RedisSharedUserSessionRuntime,
                         constructorArgs: [AppBeans.get(RedisClient), sharedUserSessionCache,
                                           AppBeans.get(SharedUserPermissionBuildHelper),
                                           AppBeans.get(CubaPermissionStringRepresentationHelper),
@@ -111,7 +111,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         }
         overridedSharedUserSessionCache.init()
 
-        def overridedTestClass = new RedisSharedUserSessionRepository(
+        def overridedTestClass = new RedisSharedUserSessionRuntime(
                 redisClient, overridedSharedUserSessionCache,
                 AppBeans.get(SharedUserPermissionBuildHelper),
                 AppBeans.get(CubaPermissionStringRepresentationHelper),

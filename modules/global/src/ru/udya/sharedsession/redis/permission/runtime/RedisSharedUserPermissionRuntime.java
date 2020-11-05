@@ -11,7 +11,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
-import ru.udya.sharedsession.repository.SharedUserSessionRepository;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class RedisSharedUserPermissionRuntime
 
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
-    protected SharedUserSessionRepository sessionRepository;
+    protected SharedUserSessionRuntime sessionRepository;
     protected SharedUserSessionPermissionRepository sessionPermissionRepository;
 
 
@@ -36,7 +36,7 @@ public class RedisSharedUserPermissionRuntime
         this.sessionPermissionRepository = sessionPermissionRepository;
     }
 
-    public void setSessionRepository(SharedUserSessionRepository sessionRepository) {
+    public void setSessionRepository(SharedUserSessionRuntime sessionRepository) {
         this.sessionRepository = sessionRepository;
     }
 

@@ -1,16 +1,17 @@
 package ru.udya.sharedsession.redis.permission.runtime
 
+import com.haulmont.cuba.core.entity.contracts.Id
 import com.haulmont.cuba.core.global.AppBeans
 import com.haulmont.cuba.core.global.UuidProvider
 import com.haulmont.cuba.security.entity.EntityOp
+import com.haulmont.cuba.security.entity.User
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.domain.SharedUserSession
-import ru.udya.sharedsession.domain.SharedUserSessionImpl
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
-import static ru.udya.sharedsession.redis.RedisSharedUserSessionRepository.KEY_PATTERN
+import static ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime.KEY_PATTERN
 
 class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpecification {
 
@@ -100,5 +101,43 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
         'sec$User'  | WILDCARD                               | EntityOp.READ.id   | false
         'sec$User'  | "9270d6a2-c38d-c3da-1dac-70d54143b762" | EntityOp.CREATE.id | false
         'sec$User'  | "9270d6a2-c38d-c3da-1dac-70d54143b762" | "assignToGroup"    | true
+    }
+
+    def "check that user has granted permission after someone grants them to him"() {
+        given:
+        SharedUserPermission grantedPermission =
+                entityPermission('sec$User', "9270d6a2-c38d-c3da-1dac-70d54143b762", "assignToGroup")
+
+        when:
+        testClass.grantPermissionToUserSession(sharedUserSession, grantedPermission)
+
+        then:
+        testClass.isPermissionGrantedToUserSession(sharedUserSession, grantedPermission)
+    }
+
+    def "check that user has granted permission in all sessions after someone grants them to him"() {
+        given:
+
+        def userId = UuidProvider.createUuid()
+        def firstSharedUserSessionId = String.format(KEY_PATTERN, userId, UuidProvider.createUuid())
+        def firstSharedUserSession = new SharedUserSessionImpl(firstSharedUserSessionId)
+
+        def secondSharedUserSessionId = String.format(KEY_PATTERN, userId, UuidProvider.createUuid())
+        def secondSharedUserSession = new SharedUserSessionImpl(secondSharedUserSessionId)
+
+        SharedUserPermission grantedPermission =
+                entityPermission('sec$User', "9270d6a2-c38d-c3da-1dac-70d54143b762", "assignToGroup")
+
+        testClass.grantPermissionToUserSessions([firstSharedUserSession, secondSharedUserSession],
+                                                grantedPermission)
+
+        SharedUserPermission anotherPermission =
+                entityPermission('sec$User', "9270d6a2-c38d-c3da-1dac-70d54143b762", "assignToGroup")
+        when:
+        testClass.grantPermissionToAllUserSessions(Id.of(userId, User), grantedPermission)
+
+        then:
+        testClass.isPermissionGrantedToUserSession(firstSharedUserSession, grantedPermission)
+        testClass.isPermissionGrantedToUserSession(secondSharedUserSession, grantedPermission)
     }
 }

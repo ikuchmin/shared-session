@@ -4,7 +4,7 @@ import com.haulmont.cuba.security.app.UserSessionsAPI;
 import com.haulmont.cuba.security.entity.UserSessionEntity;
 import com.haulmont.cuba.security.global.NoUserSessionException;
 import com.haulmont.cuba.security.global.UserSession;
-import ru.udya.sharedsession.repository.SharedUserSessionRepository;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -19,9 +19,9 @@ public class RedisUserSessions implements UserSessionsAPI {
 
     protected volatile int sendTimeout = 10;
 
-    protected SharedUserSessionRepository sharedUserSessionRepository;
+    protected SharedUserSessionRuntime sharedUserSessionRepository;
 
-    public RedisUserSessions(SharedUserSessionRepository sharedUserSessionRepository) {
+    public RedisUserSessions(SharedUserSessionRuntime sharedUserSessionRepository) {
         this.sharedUserSessionRepository = sharedUserSessionRepository;
     }
 

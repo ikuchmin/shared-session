@@ -15,16 +15,13 @@ import com.haulmont.cuba.security.role.RoleDefinition;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
-import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.RedisCodec;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.cache.SharedUserSessionCache;
 import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.exception.SharedSessionException;
-import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
 import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
@@ -34,9 +31,11 @@ import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentatio
 import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentationHelper.CubaPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
-import ru.udya.sharedsession.repository.SharedUserSessionRepository;
+import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
@@ -57,9 +56,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toMap;
 
 // todo rename to Runtime and create real Repository
-@Component(SharedUserSessionRepository.NAME)
-public class RedisSharedUserSessionRepository
-        implements SharedUserSessionRepository {
+@Component(SharedUserSessionRuntime.NAME)
+public class RedisSharedUserSessionRuntime
+        implements SharedUserSessionRuntime {
 
     public static final String KEY_PREFIX = "shared:session";
 
@@ -73,19 +72,20 @@ public class RedisSharedUserSessionRepository
     protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
     protected CubaPermissionBuildHelper cubaPermissionBuildHelper;
 
+    protected RedisSharedUserSessionRepository sharedUserSessionRepository;
     protected RedisSharedUserPermissionRuntime sharedUserPermissionRuntime;
     protected RedisSharedUserPermissionRepository sharedUserPermissionRepository;
 
     protected RedisCodec<String, UserSession> objectRedisCodec;
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
-    public RedisSharedUserSessionRepository(RedisClient redisClient,
-                                            SharedUserSessionCache sessionCache,
-                                            SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
-                                            CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper,
-                                            CubaPermissionBuildHelper cubaPermissionBuildHelper,
-                                            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
-                                            RedisSharedUserPermissionRepository sharedUserPermissionRepository) {
+    public RedisSharedUserSessionRuntime(RedisClient redisClient,
+                                         SharedUserSessionCache sessionCache,
+                                         SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
+                                         CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper,
+                                         CubaPermissionBuildHelper cubaPermissionBuildHelper,
+                                         RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
+                                         RedisSharedUserPermissionRepository sharedUserPermissionRepository) {
         this.redisClient = redisClient;
         this.sessionCache = sessionCache;
         this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
@@ -202,6 +202,7 @@ public class RedisSharedUserSessionRepository
 
         private static final long serialVersionUID = 453371678445414846L;
 
+        protected RedisSharedUserSessionId sharedUserSessionId;
         protected String sharedId;
 
         // use delegate to apply side-effects in getter/setter UserSession
@@ -258,45 +259,19 @@ public class RedisSharedUserSessionRepository
         }
 
         @SuppressWarnings("UnusedReturnValue")
-        protected UserSession safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
+        protected UserSession safeUpdatingValue(Consumer<ru.udya.sharedsession.redis.domain.RedisSharedUserSession> updateFn) {
 
-            try (StatefulRedisConnection<String, UserSession> writeConnection =
-                         redisClient.connect(objectRedisCodec)) {
+            try {
+                var updatedSharedUserSession = sharedUserSessionRepository
+                        .updateByFn(sharedUserSessionId, updateFn);
 
-                RedisCommands<String, UserSession> sync = writeConnection.sync();
+                sessionCache.saveInCache(sharedUserSessionId.getSharedId(), updatedSharedUserSession);
 
-                sync.watch(sharedId);
+            } catch (SharedSessionOptimisticLockException optimisticLockException) {
 
-                UserSession sessionFromRedis = sync.get(sharedId);
-                if (sessionFromRedis == null) {
-                    throw new SharedSessionNotFoundException(String.format("Session isn't found in Redis storage (Key: %s)", sharedId));
-                }
+                sessionCache.removeFromCache(sharedUserSessionId.getSharedId());
 
-                RedisSharedUserSession updatedSharedUserSession =
-                        new RedisSharedUserSession(sessionFromRedis, sharedId);
-
-                // apply setter
-                updateFn.accept(updatedSharedUserSession);
-
-                sync.multi();
-                sync.set(sharedId, sessionFromRedis);
-
-                TransactionResult transactionResult = sync.exec();
-                if (transactionResult.wasDiscarded()) {
-
-                    sessionCache.removeFromCache(sharedId);
-
-                    throw new SharedSessionOptimisticLockException(
-                            "Session changes can't be saved to Redis because someone changes session in Redis during transaction");
-                }
-
-                sessionCache.saveInCache(sharedId, updatedSharedUserSession);
-
-                return updatedSharedUserSession;
-            } catch (RedisCommandTimeoutException e) {
-                throw new SharedSessionTimeoutException(e);
-            } catch (RedisException e) {
-                throw new SharedSessionException(e);
+                throw optimisticLockException;
             }
         }
 
@@ -304,7 +279,7 @@ public class RedisSharedUserSessionRepository
 
             RedisSharedUserSession sharedUserSession = sessionCache
                     .getFromCacheBySessionKey(this.sharedId,
-                            RedisSharedUserSessionRepository.this::findBySessionKeyNoCache);
+                            RedisSharedUserSessionRuntime.this::findBySessionKeyNoCache);
 
             return getter.apply(sharedUserSession);
         }

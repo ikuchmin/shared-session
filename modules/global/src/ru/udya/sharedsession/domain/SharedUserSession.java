@@ -1,8 +1,8 @@
 package ru.udya.sharedsession.domain;
 
-import java.io.Serializable;
+import com.haulmont.cuba.security.global.UserSession;
 
-public interface SharedUserSession {
+public interface SharedUserSession extends SharedUserSessionId {
 
-    Serializable getSharedId();
+    UserSession getUserSession();
 }

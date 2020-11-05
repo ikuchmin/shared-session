@@ -4,12 +4,12 @@ import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import com.haulmont.cuba.security.global.UserSession;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
+import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 
+@Component("ss_RedisUserSessionCodec")
 public class RedisUserSessionCodec implements RedisCodec<String, UserSession> {
-
-    public static final RedisUserSessionCodec INSTANCE = new RedisUserSessionCodec();
 
     @Override
     public String decodeKey(ByteBuffer buf) {

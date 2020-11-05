@@ -6,12 +6,10 @@ import com.haulmont.cuba.security.entity.EntityAttrAccess
 import com.haulmont.cuba.security.entity.EntityOp
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.domain.SharedUserSession
-import ru.udya.sharedsession.domain.SharedUserSessionImpl
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
-import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
-import static ru.udya.sharedsession.redis.RedisSharedUserSessionRepository.KEY_PATTERN
+import static ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime.KEY_PATTERN
 
 class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSpecification {
 

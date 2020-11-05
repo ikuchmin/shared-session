@@ -12,7 +12,7 @@ import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.redis.RedisSharedUserSessionRepository;
+import ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -43,7 +43,7 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
                 this.invalidateConnection.sync();
 
         commands.clientTracking(TrackingArgs.Builder.enabled()
-                .bcast().prefixes(RedisSharedUserSessionRepository.KEY_PREFIX));
+                .bcast().prefixes(RedisSharedUserSessionRuntime.KEY_PREFIX));
         this.invalidateConnection.addListener(message -> {
 
             if (message.getType().equals("invalidate")) {
