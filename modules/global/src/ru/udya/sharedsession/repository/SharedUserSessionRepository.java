@@ -9,15 +9,15 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public interface SharedUserSessionRepository {
+public interface SharedUserSessionRepository<ID extends Serializable> {
 
     String NAME = "ss_SharedUserSessionRepository";
 
-    SharedUserSession findById(Serializable sharedId);
+    SharedUserSession<ID> findById(ID sharedId);
 
-    List<SharedUserSession> findAllByUser(Id<User, UUID> userId);
+    List<? extends SharedUserSession<ID>> findAllByUser(Id<User, UUID> userId);
 
-    List<SharedUserSessionId> findAllKeysByUser(Id<User, UUID> userId);
+    List<? extends SharedUserSessionId<ID>> findAllKeysByUser(Id<User, UUID> userId);
 
-    void save(SharedUserSession sharedUserSession);
+    void save(SharedUserSession<ID> sharedUserSession);
 }

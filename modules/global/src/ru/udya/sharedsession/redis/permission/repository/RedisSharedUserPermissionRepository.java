@@ -18,6 +18,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionStringRepresentationHelper;
 import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
 
 import javax.annotation.PostConstruct;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Component(SharedUserSessionPermissionRepository.NAME)
 public class RedisSharedUserPermissionRepository
-        implements SharedUserSessionPermissionRepository {
+        implements SharedUserSessionPermissionRepository<RedisSharedUserSession> {
 
     public static final String PERMISSION_SUFFIX = "permissions";
 
@@ -55,7 +56,7 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public List<SharedUserPermission> findAllByUserSession(SharedUserSession userSession) {
+    public List<SharedUserPermission> findAllByUserSession(RedisSharedUserSession userSession) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
@@ -80,7 +81,7 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserEntityPermission> findAllEntityPermissionsByUserSession(
-            SharedUserSession userSession) {
+            RedisSharedUserSession userSession) {
 
         return internalFindPermissionsByUserSessionAndType(
                 userSession, SharedUserEntityPermission.class);
@@ -88,7 +89,7 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserEntityAttributePermission> findAllEntityAttributePermissionsByUserSession(
-            SharedUserSession userSession) {
+            RedisSharedUserSession userSession) {
 
         return internalFindPermissionsByUserSessionAndType
                 (userSession, SharedUserEntityAttributePermission.class);
@@ -96,7 +97,7 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserSpecificPermission> findAllSpecificPermissionsByUserSession(
-            SharedUserSession userSession) {
+            RedisSharedUserSession userSession) {
 
         return internalFindPermissionsByUserSessionAndType(
                 userSession, SharedUserSpecificPermission.class);
@@ -104,7 +105,7 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserScreenPermission> findAllScreenPermissionsByUserSession(
-            SharedUserSession userSession) {
+            RedisSharedUserSession userSession) {
 
         return internalFindPermissionsByUserSessionAndType(
                 userSession, SharedUserScreenPermission.class);
@@ -112,14 +113,14 @@ public class RedisSharedUserPermissionRepository
 
     @Override
     public List<SharedUserScreenElementPermission> findAllScreenElementPermissionsByUserSession(
-            SharedUserSession userSession) {
+            RedisSharedUserSession userSession) {
 
         return internalFindPermissionsByUserSessionAndType(
                 userSession, SharedUserScreenElementPermission.class);
     }
 
     public <T extends SharedUserPermission> List<T> internalFindPermissionsByUserSessionAndType(
-            SharedUserSession userSession, Class<T> permissionType) {
+            RedisSharedUserSession userSession, Class<T> permissionType) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
@@ -153,7 +154,7 @@ public class RedisSharedUserPermissionRepository
 
 
     @Override
-    public boolean doesHavePermission(SharedUserSession userSession, SharedUserPermission permission) {
+    public boolean doesHavePermission(RedisSharedUserSession userSession, SharedUserPermission permission) {
 
         var redisKey = createSharedUserSessionPermissionKey(userSession);
 
@@ -175,7 +176,7 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public List<Boolean> doesHavePermissions(SharedUserSession userSession,
+    public List<Boolean> doesHavePermissions(RedisSharedUserSession userSession,
                                              List<? extends SharedUserPermission> permissions) {
 
         return permissions.stream()
@@ -205,12 +206,12 @@ public class RedisSharedUserPermissionRepository
     }
 
     @Override
-    public void addToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+    public void addToUserSession(RedisSharedUserSession userSession, SharedUserPermission permission) {
         this.addToUserSession(userSession, Collections.singletonList(permission));
     }
 
     @Override
-    public void addToUserSession(SharedUserSession userSession,
+    public void addToUserSession(RedisSharedUserSession userSession,
                                  List<? extends SharedUserPermission> permissions) {
 
         // there is because lettuce can't

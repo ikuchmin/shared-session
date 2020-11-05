@@ -6,24 +6,25 @@ import com.haulmont.cuba.security.entity.User;
 import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public interface SharedUserSessionPermissionRuntime {
+public interface SharedUserSessionPermissionRuntime<S extends SharedUserSession<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserPermissionRuntime";
 
-    boolean isPermissionGrantedToUserSession(SharedUserSession userSession, SharedUserPermission permission);
+    boolean isPermissionGrantedToUserSession(S userSession, SharedUserPermission permission);
 
-    boolean isPermissionsGrantedToUserSession(SharedUserSession userSession, List<SharedUserPermission> permission);
+    boolean isPermissionsGrantedToUserSession(S userSession, List<SharedUserPermission> permission);
 
-    void grantPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission);
+    void grantPermissionToUserSession(S userSession, SharedUserPermission permission);
 
-    void grantPermissionsToUserSession(SharedUserSession userSession, List<? extends SharedUserPermission> permission);
+    void grantPermissionsToUserSession(S userSession, List<? extends SharedUserPermission> permission);
 
-    void grantPermissionToUserSessions(List<? extends SharedUserSession> userSession, SharedUserPermission permission);
+    void grantPermissionToUserSessions(List<? extends S> userSession, SharedUserPermission permission);
 
-    void grantPermissionsToUserSessions(List<? extends SharedUserSession> userSession, List<? extends SharedUserPermission> permission);
+    void grantPermissionsToUserSessions(List<? extends S> userSession, List<? extends SharedUserPermission> permission);
 
     void grantPermissionToAllUserSessions(Id<User, UUID> userId, SharedUserPermission permission);
 

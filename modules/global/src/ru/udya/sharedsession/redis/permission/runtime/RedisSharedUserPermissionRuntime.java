@@ -4,14 +4,14 @@ import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
-import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
-import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
+import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,27 +21,25 @@ import static java.util.stream.Collectors.toList;
 
 @Component(SharedUserSessionPermissionRuntime.NAME)
 public class RedisSharedUserPermissionRuntime
-        implements SharedUserSessionPermissionRuntime {
+        implements SharedUserSessionPermissionRuntime<RedisSharedUserSession> {
 
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
-    protected SharedUserSessionRuntime sessionRepository;
-    protected SharedUserSessionPermissionRepository sessionPermissionRepository;
+    protected RedisSharedUserSessionRepository sessionRepository;
+    protected RedisSharedUserPermissionRepository sessionPermissionRepository;
 
-
-    public RedisSharedUserPermissionRuntime(SharedUserPermissionParentHelper permissionParentHelper,
-                                            SharedUserSessionPermissionRepository sessionPermissionRepository) {
+    public RedisSharedUserPermissionRuntime(
+            SharedUserPermissionParentHelper permissionParentHelper,
+            RedisSharedUserSessionRepository sessionRepository,
+            RedisSharedUserPermissionRepository sessionPermissionRepository) {
 
         this.permissionParentHelper = permissionParentHelper;
+        this.sessionRepository = sessionRepository;
         this.sessionPermissionRepository = sessionPermissionRepository;
     }
 
-    public void setSessionRepository(SharedUserSessionRuntime sessionRepository) {
-        this.sessionRepository = sessionRepository;
-    }
-
     @Override
-    public boolean isPermissionGrantedToUserSession(SharedUserSession userSession,
+    public boolean isPermissionGrantedToUserSession(RedisSharedUserSession userSession,
                                                     SharedUserPermission permission) {
 
         // Redis implementation doesn't support so deep permissions
@@ -67,7 +65,7 @@ public class RedisSharedUserPermissionRuntime
     }
 
     @Override
-    public boolean isPermissionsGrantedToUserSession(SharedUserSession userSession,
+    public boolean isPermissionsGrantedToUserSession(RedisSharedUserSession userSession,
                                                      List<SharedUserPermission> permissions) {
 
         // Redis implementation doesn't support so deep permissions
@@ -93,30 +91,30 @@ public class RedisSharedUserPermissionRuntime
     }
 
     @Override
-    public void grantPermissionToUserSession(SharedUserSession userSession, SharedUserPermission permission) {
+    public void grantPermissionToUserSession(RedisSharedUserSession userSession, SharedUserPermission permission) {
         sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
-    public void grantPermissionsToUserSession(SharedUserSession userSession,
+    public void grantPermissionsToUserSession(RedisSharedUserSession userSession,
                                               List<? extends SharedUserPermission> permission) {
         sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
-    public void grantPermissionToUserSessions(List<? extends SharedUserSession> userSessions,
+    public void grantPermissionToUserSessions(List<? extends RedisSharedUserSession> userSessions,
                                               SharedUserPermission permission) {
 
-        for (SharedUserSession userSession : userSessions) {
+        for (RedisSharedUserSession userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permission);
         }
     }
 
     @Override
-    public void grantPermissionsToUserSessions(List<? extends SharedUserSession> userSessions,
+    public void grantPermissionsToUserSessions(List<? extends RedisSharedUserSession> userSessions,
                                                List<? extends SharedUserPermission> permissions) {
 
-        for (SharedUserSession userSession : userSessions) {
+        for (RedisSharedUserSession userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permissions);
         }
     }

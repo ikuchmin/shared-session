@@ -7,7 +7,7 @@ import com.haulmont.cuba.security.auth.SimpleAuthenticationDetails;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.remoting.support.RemoteInvocationResult;
 import ru.udya.sharedsession.domain.SharedUserSession;
-import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -100,8 +100,8 @@ public class SharedUserSessionStandardSerialization
 
         // we don't cache the result because it is fast as is
         // there is we exploit idea that serialization is performed into initialized spring context
-        SharedUserSessionRuntime sharedUserSessionRepository =
-                AppBeans.get(SharedUserSessionRuntime.class);
+        SharedUserSessionRuntimeAdapter sharedUserSessionRepository =
+                AppBeans.get(SharedUserSessionRuntimeAdapter.class);
 
         return sharedUserSessionRepository.findById(sessionId);
     }

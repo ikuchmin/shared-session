@@ -7,7 +7,7 @@ import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.group.AccessGroupDefinition;
 import com.haulmont.cuba.security.role.RoleDefinition;
 import com.haulmont.cuba.security.sys.UserSessionManager;
-import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.UUID;
 public class SharedUserSessionManager extends UserSessionManager {
 
     @Inject
-    protected SharedUserSessionRuntime sharedUserSessionRepository;
+    protected SharedUserSessionRuntimeAdapter sharedUserSessionRepository;
 
     @Override
     @SuppressWarnings("ConstantConditions")

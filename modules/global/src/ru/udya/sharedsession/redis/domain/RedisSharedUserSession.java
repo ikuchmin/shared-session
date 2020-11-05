@@ -5,7 +5,7 @@ import ru.udya.sharedsession.domain.SharedUserSession;
 
 public class RedisSharedUserSession
         extends RedisSharedUserSessionId
-        implements SharedUserSession {
+        implements SharedUserSession<String> {
 
     protected UserSession userSession;
 
@@ -29,7 +29,7 @@ public class RedisSharedUserSession
     }
 
     @Override
-    public UserSession getUserSession() {
+    public UserSession getCubaUserSession() {
         return userSession;
     }
 
@@ -39,7 +39,7 @@ public class RedisSharedUserSession
 
     @Override
     public String toString() {
-        return "RedisSharedUserSession{" +
+        return "RedisSharedUserSessionAdapter{" +
                "sharedId='" + sharedId + '\'' +
                '}';
     }

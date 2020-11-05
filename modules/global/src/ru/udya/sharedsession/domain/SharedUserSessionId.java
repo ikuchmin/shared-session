@@ -1,7 +1,9 @@
 package ru.udya.sharedsession.domain;
 
-public interface SharedUserSessionId {
+import java.io.Serializable;
 
-    String getSharedId();
+public interface SharedUserSessionId<ID extends Serializable> {
+
+    ID getSharedId();
 
 }

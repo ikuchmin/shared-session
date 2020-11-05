@@ -2,7 +2,7 @@ package ru.udya.sharedsession.redis.domain;
 
 import ru.udya.sharedsession.domain.SharedUserSessionId;
 
-public class RedisSharedUserSessionId implements SharedUserSessionId {
+public class RedisSharedUserSessionId implements SharedUserSessionId<String> {
 
     protected String sharedId;
 

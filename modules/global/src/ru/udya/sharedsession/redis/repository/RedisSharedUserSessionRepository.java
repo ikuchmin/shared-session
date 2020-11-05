@@ -11,7 +11,6 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.domain.SharedUserSession;
-import ru.udya.sharedsession.domain.SharedUserSessionId;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionNotFoundException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
@@ -22,7 +21,6 @@ import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 @Component(SharedUserSessionRepository.NAME)
-public class RedisSharedUserSessionRepository implements SharedUserSessionRepository {
+public class RedisSharedUserSessionRepository implements SharedUserSessionRepository<String> {
 
     public static final String KEY_PREFIX = "shared:session";
 
@@ -43,7 +41,7 @@ public class RedisSharedUserSessionRepository implements SharedUserSessionReposi
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
     @Override
-    public SharedUserSession findById(Serializable sharedId) {
+    public RedisSharedUserSession findById(String sharedId) {
 
         try {
 
@@ -66,12 +64,12 @@ public class RedisSharedUserSessionRepository implements SharedUserSessionReposi
     }
 
     @Override
-    public List<SharedUserSession> findAllByUser(Id<User, UUID> userId) {
+    public List<RedisSharedUserSession> findAllByUser(Id<User, UUID> userId) {
         return Collections.emptyList();
     }
 
     @Override
-    public List<SharedUserSessionId> findAllKeysByUser(Id<User, UUID> userId) {
+    public List<> findAllKeysByUser(Id<User, UUID> userId) {
         return null;
     }
 
@@ -83,7 +81,7 @@ public class RedisSharedUserSessionRepository implements SharedUserSessionReposi
         try {
 
             asyncReadConnection.async()
-                               .set(sharedId, sharedUserSession.getUserSession());
+                               .set(sharedId, sharedUserSession.getCubaUserSession());
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);

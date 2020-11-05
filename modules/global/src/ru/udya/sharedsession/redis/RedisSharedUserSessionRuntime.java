@@ -23,7 +23,6 @@ import ru.udya.sharedsession.cache.SharedUserSessionCache;
 import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionOptimisticLockException;
-import ru.udya.sharedsession.exception.SharedSessionPersistingException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.permission.helper.CubaPermissionBuildHelper;
@@ -31,11 +30,12 @@ import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentatio
 import ru.udya.sharedsession.permission.helper.CubaPermissionStringRepresentationHelper.CubaPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
-import ru.udya.sharedsession.repository.SharedUserSessionRuntime;
+import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
@@ -56,9 +56,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toMap;
 
 // todo rename to Runtime and create real Repository
-@Component(SharedUserSessionRuntime.NAME)
+@Component(SharedUserSessionRuntimeAdapter.NAME)
 public class RedisSharedUserSessionRuntime
-        implements SharedUserSessionRuntime {
+        implements SharedUserSessionRuntimeAdapter {
 
     public static final String KEY_PREFIX = "shared:session";
 
@@ -104,8 +104,8 @@ public class RedisSharedUserSessionRuntime
 
     @Override
     public UserSession createSession(UserSession src) {
-        RedisSharedUserSession sharedUserSession
-                = new RedisSharedUserSession(src);
+        RedisSharedUserSessionAdapter sharedUserSession
+                = new RedisSharedUserSessionAdapter(src);
 
         // save session in redis during creation
         sharedUserSession.save();
@@ -115,7 +115,7 @@ public class RedisSharedUserSessionRuntime
 
     @Override
     public void save(UserSession session) {
-        if (session instanceof RedisSharedUserSession) {
+        if (session instanceof RedisSharedUserSessionAdapter) {
             // everything is saved if it is redis session
             return;
         }
@@ -126,7 +126,7 @@ public class RedisSharedUserSessionRuntime
     @Override
     public UserSession findById(Serializable id) {
         // todo check that session is exist
-        return new RedisSharedUserSession((String) id);
+        return new RedisSharedUserSessionAdapter((String) id);
     }
 
     @Override
@@ -163,13 +163,13 @@ public class RedisSharedUserSessionRuntime
         asyncReadConnection.close();
     }
 
-    protected RedisSharedUserSession findBySessionKeyNoCache(String sessionKey) {
+    protected RedisSharedUserSessionAdapter findBySessionKeyNoCache(String sessionKey) {
         try {
 
             UserSession userSession = asyncReadConnection.async()
                     .get(sessionKey).get();
 
-            return new RedisSharedUserSession(userSession, sessionKey);
+            return new RedisSharedUserSessionAdapter(userSession, sessionKey);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -197,7 +197,7 @@ public class RedisSharedUserSessionRuntime
         return UuidProvider.fromString(sessionKeyParts[3]);
     }
 
-    protected class RedisSharedUserSession extends UserSession
+    protected class RedisSharedUserSessionAdapter extends UserSession
             implements SharedUserSession {
 
         private static final long serialVersionUID = 453371678445414846L;
@@ -208,64 +208,54 @@ public class RedisSharedUserSessionRuntime
         // use delegate to apply side-effects in getter/setter UserSession
         protected UserSession delegate;
 
-        public RedisSharedUserSession(String sharedId) {
+        protected RedisSharedUserSession redisSharedUserSession;
+
+        public RedisSharedUserSessionAdapter(String sharedId) {
             this.sharedId = sharedId;
             this.id = extractUserSessionIdFromSharedUserSessionKey(sharedId);
         }
 
-        public RedisSharedUserSession(Id<User, UUID> userId, UUID sessionId) {
+        public RedisSharedUserSessionAdapter(Id<User, UUID> userId, UUID sessionId) {
             this.id = sessionId;
             this.sharedId = createSharedUserSessionKey(userId.getValue(), sessionId);
         }
 
-        public RedisSharedUserSession(UserSession userSession) {
+        public RedisSharedUserSessionAdapter(UserSession userSession) {
             this(userSession, createSharedUserSessionKey(userSession));
         }
 
-        public RedisSharedUserSession(UserSession userSession, String sharedId) {
+        public RedisSharedUserSessionAdapter(UserSession userSession, String sharedId) {
             this.id = userSession.getId();
             this.delegate = userSession;
             this.sharedId = sharedId;
         }
 
         protected void save() {
-            try {
-                var roleDefinition = delegate.getJoinedRole();
+            var roleDefinition = delegate.getJoinedRole();
 
-                // clean role definition because it has additional support below
-                //noinspection ConstantConditions
-                delegate.setJoinedRole(null);
-                asyncReadConnection.async()
-                                   .set(sharedId, delegate)
-                                   .get();
+            // clean role definition because it has additional support below
+            //noinspection ConstantConditions
+            delegate.setJoinedRole(null);
+            sharedUserSessionRepository.save(redisSharedUserSession);
 
-                var sharedUserPermissions = sharedPermissionBuildHelper
-                        .buildPermissionsByCubaRoleDefinition(roleDefinition);
+            var sharedUserPermissions = sharedPermissionBuildHelper
+                    .buildPermissionsByCubaRoleDefinition(roleDefinition);
 
-                sharedUserPermissionRuntime.grantPermissionsToUserSession(this, sharedUserPermissions);
+            sharedUserPermissionRuntime.grantPermissionsToUserSession(
+                    redisSharedUserSession, sharedUserPermissions);
 
-                sessionCache.saveInCache(sharedId, this);
+            sessionCache.saveInCache(redisSharedUserSession);
 
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new SharedSessionPersistingException("Thread is interrupted by external process during persisting user session", e);
-            } catch (ExecutionException e) {
-                throw new SharedSessionPersistingException("Exception during persisting user session", e);
-            } catch (RedisCommandTimeoutException e) {
-                throw new SharedSessionTimeoutException(e);
-            } catch (RedisException e) {
-                throw new SharedSessionException(e);
-            }
         }
 
         @SuppressWarnings("UnusedReturnValue")
-        protected UserSession safeUpdatingValue(Consumer<ru.udya.sharedsession.redis.domain.RedisSharedUserSession> updateFn) {
+        protected UserSession safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
 
             try {
                 var updatedSharedUserSession = sharedUserSessionRepository
                         .updateByFn(sharedUserSessionId, updateFn);
 
-                sessionCache.saveInCache(sharedUserSessionId.getSharedId(), updatedSharedUserSession);
+                sessionCache.saveInCache(updatedSharedUserSession);
 
             } catch (SharedSessionOptimisticLockException optimisticLockException) {
 
@@ -275,9 +265,9 @@ public class RedisSharedUserSessionRuntime
             }
         }
 
-        protected <T> T safeGettingValue(Function<RedisSharedUserSession, T> getter) {
+        protected <T> T safeGettingValue(Function<RedisSharedUserSessionAdapter, T> getter) {
 
-            RedisSharedUserSession sharedUserSession = sessionCache
+            RedisSharedUserSessionAdapter sharedUserSession = sessionCache
                     .getFromCacheBySessionKey(this.sharedId,
                             RedisSharedUserSessionRuntime.this::findBySessionKeyNoCache);
 
@@ -454,7 +444,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setUser(User user) {
-            safeUpdatingValue(us -> us.delegate.setUser(user));
+            safeUpdatingValue(us -> us.getCubaUserSession().setUser(user));
         }
 
         @Override
@@ -464,7 +454,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setSubstitutedUser(User substitutedUser) {
-            safeUpdatingValue(us -> us.delegate.setSubstitutedUser(substitutedUser));
+            safeUpdatingValue(us -> us.getCubaUserSession().setSubstitutedUser(substitutedUser));
         }
 
         @Override
@@ -484,7 +474,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setLocale(Locale locale) {
-            safeUpdatingValue(us -> us.delegate.setLocale(locale));
+            safeUpdatingValue(us -> us.getCubaUserSession().setLocale(locale));
         }
 
         @Override
@@ -495,7 +485,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setTimeZone(TimeZone timeZone) {
-            safeUpdatingValue(us -> us.delegate.setTimeZone(timeZone));
+            safeUpdatingValue(us -> us.getCubaUserSession().setTimeZone(timeZone));
         }
 
         @Override
@@ -505,7 +495,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setAddress(String address) {
-            safeUpdatingValue(us -> us.delegate.setAddress(address));
+            safeUpdatingValue(us -> us.getCubaUserSession().setAddress(address));
         }
 
         @Override
@@ -515,7 +505,7 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setClientInfo(String clientInfo) {
-            safeUpdatingValue(us -> us.delegate.setClientInfo(clientInfo));
+            safeUpdatingValue(us -> us.getCubaUserSession().setClientInfo(clientInfo));
         }
 
         @Override
@@ -526,12 +516,12 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void removeAttribute(String name) {
-            safeUpdatingValue(us -> us.delegate.removeAttribute(name));
+            safeUpdatingValue(us -> us.getCubaUserSession().removeAttribute(name));
         }
 
         @Override
         public void setAttribute(String name, Serializable value) {
-            safeUpdatingValue(us -> us.delegate.setAttribute(name, value));
+            safeUpdatingValue(us -> us.getCubaUserSession().setAttribute(name, value));
         }
 
         @Override
@@ -551,12 +541,12 @@ public class RedisSharedUserSessionRuntime
 
         @Override
         public void setConstraints(ConstraintsContainer constraints) {
-            safeUpdatingValue(us -> us.delegate.setConstraints(constraints));
+            safeUpdatingValue(us -> us.getCubaUserSession().setConstraints(constraints));
         }
 
         @Override
         public String toString() {
-            return "RedisSharedUserSession{" +
+            return "RedisSharedUserSessionAdapter{" +
                    "sessionKey='" + sharedId + '\'' +
                    "} ";
         }
