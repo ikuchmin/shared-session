@@ -1,16 +1,17 @@
 package ru.udya.sharedsession.cache;
 
-import com.haulmont.cuba.security.global.UserSession;
+import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
-public interface SharedUserSessionCache {
+public interface SharedUserSessionCache<T extends SharedUserSession<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserSessionCache";
 
-    <T extends UserSession> T getFromCacheBySessionKey(
-            String sessionKey, Function<String, T> getBySessionKeyId);
+    T getFromCacheBySessionKey(String sessionKey,
+                               Function<String, T> getBySessionKeyId);
 
     void saveInCache(RedisSharedUserSession redisSharedUserSession);
 

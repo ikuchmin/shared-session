@@ -3,14 +3,14 @@ package ru.udya.sharedsession.permission.runtime;
 import com.haulmont.cuba.core.entity.contracts.Id;
 import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
-import ru.udya.sharedsession.domain.SharedUserSession;
+import ru.udya.sharedsession.domain.SharedUserSessionId;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public interface SharedUserSessionPermissionRuntime<S extends SharedUserSession<ID>, ID extends Serializable> {
+public interface SharedUserSessionPermissionRuntime<S extends SharedUserSessionId<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserPermissionRuntime";
 

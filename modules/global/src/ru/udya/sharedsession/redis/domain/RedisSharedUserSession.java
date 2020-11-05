@@ -4,9 +4,9 @@ import com.haulmont.cuba.security.global.UserSession;
 import ru.udya.sharedsession.domain.SharedUserSession;
 
 public class RedisSharedUserSession
-        extends RedisSharedUserSessionId
-        implements SharedUserSession<String> {
+        implements SharedUserSession<String>, RedisSharedUserSessionId {
 
+    protected String sharedId;
     protected UserSession userSession;
 
     public static RedisSharedUserSession of(RedisSharedUserSessionId sharedUserSessionId,
@@ -26,6 +26,17 @@ public class RedisSharedUserSession
         redisSharedUserSession.setUserSession(userSession);
 
         return redisSharedUserSession;
+    }
+
+
+
+    @Override
+    public String getSharedId() {
+        return sharedId;
+    }
+
+    public void setSharedId(String sharedId) {
+        this.sharedId = sharedId;
     }
 
     @Override

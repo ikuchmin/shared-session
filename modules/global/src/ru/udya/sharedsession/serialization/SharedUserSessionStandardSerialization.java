@@ -26,7 +26,7 @@ public class SharedUserSessionStandardSerialization
 
             if (value instanceof SharedUserSession) {
                 Object sharedUserSessionHolder =
-                        createSharedUserSessionHolder((SharedUserSession) value);
+                        createSharedUserSessionHolder((SharedUserSession<?>) value);
 
                 serializedObject = new RemoteInvocationResult(sharedUserSessionHolder);
             }
@@ -36,7 +36,7 @@ public class SharedUserSessionStandardSerialization
 
                 if (userSession instanceof SharedUserSession) {
                     SharedUserSessionHolder sharedUserSessionHolder =
-                            createSharedUserSessionHolder((SharedUserSession) userSession);
+                            createSharedUserSessionHolder((SharedUserSession<?>) userSession);
 
                     serializedObject = new RemoteInvocationResult(
                             new SimpleAuthenticationDetails(sharedUserSessionHolder));
@@ -45,13 +45,13 @@ public class SharedUserSessionStandardSerialization
         }
 
         if (object instanceof SharedUserSession) {
-            serializedObject = createSharedUserSessionHolder((SharedUserSession) object);
+            serializedObject = createSharedUserSessionHolder((SharedUserSession<?>) object);
         }
 
         super.serialize(serializedObject, os);
     }
 
-    protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSession sharedUserSession) {
+    protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSession<?> sharedUserSession) {
         Serializable sessionId = sharedUserSession.getSharedId();
 
         SharedUserSessionHolder userSessionHolder =

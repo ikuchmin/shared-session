@@ -8,10 +8,11 @@ import com.haulmont.cuba.security.entity.User
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.domain.SharedUserSession
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
-import static ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime.KEY_PATTERN
+import static ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository.KEY_PATTERN
 
 class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpecification {
 
@@ -25,7 +26,7 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
         def sharedUserSessionId = String.format(KEY_PATTERN, UuidProvider.createUuid(),
                                                 UuidProvider.createUuid())
 
-        sharedUserSession = new SharedUserSessionImpl(sharedUserSessionId)
+        sharedUserSession = RedisSharedUserSessionId.of(sharedUserSessionId)
 
         permissionRepository = AppBeans.get(RedisSharedUserPermissionRepository)
 
@@ -120,10 +121,10 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
 
         def userId = UuidProvider.createUuid()
         def firstSharedUserSessionId = String.format(KEY_PATTERN, userId, UuidProvider.createUuid())
-        def firstSharedUserSession = new SharedUserSessionImpl(firstSharedUserSessionId)
+        def firstSharedUserSession = RedisSharedUserSessionId.of(firstSharedUserSessionId)
 
         def secondSharedUserSessionId = String.format(KEY_PATTERN, userId, UuidProvider.createUuid())
-        def secondSharedUserSession = new SharedUserSessionImpl(secondSharedUserSessionId)
+        def secondSharedUserSession = RedisSharedUserSessionId.of(secondSharedUserSessionId)
 
         SharedUserPermission grantedPermission =
                 entityPermission('sec$User', "9270d6a2-c38d-c3da-1dac-70d54143b762", "assignToGroup")

@@ -5,23 +5,23 @@ import com.haulmont.cuba.core.global.UuidProvider
 import com.haulmont.cuba.security.entity.EntityAttrAccess
 import com.haulmont.cuba.security.entity.EntityOp
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
-import ru.udya.sharedsession.domain.SharedUserSession
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
-import static ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime.KEY_PATTERN
+import static ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository.KEY_PATTERN
 
 class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSpecification {
 
     RedisSharedUserPermissionRepository testClass
 
-    SharedUserSession sharedUserSession
+    RedisSharedUserSessionId sharedUserSessionId
 
     void setup() {
         def sharedUserSessionId = String.format(KEY_PATTERN, UuidProvider.createUuid(),
                                                 UuidProvider.createUuid())
 
-        sharedUserSession = new SharedUserSessionImpl(sharedUserSessionId)
+        this.sharedUserSessionId = RedisSharedUserSessionId.of(sharedUserSessionId)
 
         testClass = AppBeans.get(RedisSharedUserPermissionRepository)
     }
@@ -37,16 +37,16 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
         SharedUserPermission permission3 =
                 entityPermission('sec$User', WILDCARD, EntityOp.READ.id)
         when:
-        testClass.addToUserSession(sharedUserSession, permission)
+        testClass.addToUserSession(sharedUserSessionId, permission)
 
         then:
-        testClass.findAllByUserSession(sharedUserSession) == [permission]
+        testClass.findAllByUserSession(sharedUserSessionId) == [permission]
 
         when:
-        testClass.addToUserSession(sharedUserSession, [permission2, permission3])
+        testClass.addToUserSession(sharedUserSessionId, [permission2, permission3])
 
         then:
-        testClass.findAllByUserSession(sharedUserSession).toSet() == [permission, permission2, permission3].toSet()
+        testClass.findAllByUserSession(sharedUserSessionId).toSet() == [permission, permission2, permission3].toSet()
     }
 
     def "check that user has permission if it is added"() {
@@ -58,16 +58,16 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
                 entityPermission('sec$Group', WILDCARD, EntityOp.CREATE.id)
 
 
-        testClass.addToUserSession(sharedUserSession, permission)
+        testClass.addToUserSession(sharedUserSessionId, permission)
 
         when:
-        def does = testClass.doesHavePermission(sharedUserSession, permission)
+        def does = testClass.doesHavePermission(sharedUserSessionId, permission)
 
         then:
         does
 
         when:
-        does = testClass.doesHavePermissions(sharedUserSession, [permission, permission2])
+        does = testClass.doesHavePermissions(sharedUserSessionId, [permission, permission2])
 
         then:
         does == [true, false]
@@ -91,25 +91,25 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
         SharedUserPermission screenElementPermission =
                 screenElementPermission('sec$User.edit', 'commitBtn', WILDCARD)
 
-        testClass.addToUserSession(sharedUserSession, [entityPermission, entityAttributePermission,
-                                                       specificPermission, screenPermission,
-                                                       screenElementPermission])
+        testClass.addToUserSession(sharedUserSessionId, [entityPermission, entityAttributePermission,
+                                                         specificPermission, screenPermission,
+                                                         screenElementPermission])
 
         when:
         def entityPermissionsByUserSession = testClass
-                .findAllEntityPermissionsByUserSession(sharedUserSession)
+                .findAllEntityPermissionsByUserSession(sharedUserSessionId)
 
         def entityAttributePermissionsByUserSession = testClass
-                .findAllEntityAttributePermissionsByUserSession(sharedUserSession)
+                .findAllEntityAttributePermissionsByUserSession(sharedUserSessionId)
 
         def specificPermissionsByUserSession = testClass
-                .findAllSpecificPermissionsByUserSession(sharedUserSession)
+                .findAllSpecificPermissionsByUserSession(sharedUserSessionId)
 
         def screenPermissionsByUserSession = testClass
-                .findAllScreenPermissionsByUserSession(sharedUserSession)
+                .findAllScreenPermissionsByUserSession(sharedUserSessionId)
 
         def screenElementPermissionsByUserSession = testClass
-                .findAllScreenElementPermissionsByUserSession(sharedUserSession)
+                .findAllScreenElementPermissionsByUserSession(sharedUserSessionId)
 
         then:
         entityPermissionsByUserSession == [entityPermission]

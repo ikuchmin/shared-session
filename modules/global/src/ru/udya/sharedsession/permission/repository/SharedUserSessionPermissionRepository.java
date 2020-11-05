@@ -1,6 +1,6 @@
 package ru.udya.sharedsession.permission.repository;
 
-import ru.udya.sharedsession.domain.SharedUserSession;
+import ru.udya.sharedsession.domain.SharedUserSessionId;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermission;
 import ru.udya.sharedsession.permission.domain.SharedUserEntityPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
@@ -11,7 +11,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 import java.io.Serializable;
 import java.util.List;
 
-public interface SharedUserSessionPermissionRepository<S extends SharedUserSession<ID>, ID extends Serializable> {
+public interface SharedUserSessionPermissionRepository<S extends SharedUserSessionId<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserSessionPermissionRepository";
 

@@ -9,7 +9,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
 import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
-import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 
@@ -21,7 +21,7 @@ import static java.util.stream.Collectors.toList;
 
 @Component(SharedUserSessionPermissionRuntime.NAME)
 public class RedisSharedUserPermissionRuntime
-        implements SharedUserSessionPermissionRuntime<RedisSharedUserSession> {
+        implements SharedUserSessionPermissionRuntime<RedisSharedUserSessionId, String> {
 
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
@@ -39,7 +39,7 @@ public class RedisSharedUserPermissionRuntime
     }
 
     @Override
-    public boolean isPermissionGrantedToUserSession(RedisSharedUserSession userSession,
+    public boolean isPermissionGrantedToUserSession(RedisSharedUserSessionId userSession,
                                                     SharedUserPermission permission) {
 
         // Redis implementation doesn't support so deep permissions
@@ -65,7 +65,7 @@ public class RedisSharedUserPermissionRuntime
     }
 
     @Override
-    public boolean isPermissionsGrantedToUserSession(RedisSharedUserSession userSession,
+    public boolean isPermissionsGrantedToUserSession(RedisSharedUserSessionId userSession,
                                                      List<SharedUserPermission> permissions) {
 
         // Redis implementation doesn't support so deep permissions
@@ -91,30 +91,30 @@ public class RedisSharedUserPermissionRuntime
     }
 
     @Override
-    public void grantPermissionToUserSession(RedisSharedUserSession userSession, SharedUserPermission permission) {
+    public void grantPermissionToUserSession(RedisSharedUserSessionId userSession, SharedUserPermission permission) {
         sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
-    public void grantPermissionsToUserSession(RedisSharedUserSession userSession,
+    public void grantPermissionsToUserSession(RedisSharedUserSessionId userSession,
                                               List<? extends SharedUserPermission> permission) {
         sessionPermissionRepository.addToUserSession(userSession, permission);
     }
 
     @Override
-    public void grantPermissionToUserSessions(List<? extends RedisSharedUserSession> userSessions,
+    public void grantPermissionToUserSessions(List<? extends RedisSharedUserSessionId> userSessions,
                                               SharedUserPermission permission) {
 
-        for (RedisSharedUserSession userSession : userSessions) {
+        for (var userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permission);
         }
     }
 
     @Override
-    public void grantPermissionsToUserSessions(List<? extends RedisSharedUserSession> userSessions,
+    public void grantPermissionsToUserSessions(List<? extends RedisSharedUserSessionId> userSessions,
                                                List<? extends SharedUserPermission> permissions) {
 
-        for (RedisSharedUserSession userSession : userSessions) {
+        for (var userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permissions);
         }
     }
@@ -143,7 +143,7 @@ public class RedisSharedUserPermissionRuntime
     public void grantPermissionToAllUsersSessions(Ids<User, UUID> userIds,
                                                   SharedUserPermission permission) {
 
-        var userSessions = sessionRepository.findAllByUsers(userIds);
+        var userSessions = sessionRepository.findAllKeysByUsers(userIds);
 
         for (var userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permission);
@@ -154,7 +154,7 @@ public class RedisSharedUserPermissionRuntime
     public void grantPermissionsToAllUsersSessions(Ids<User, UUID> userIds,
                                                    List<? extends SharedUserPermission> permissions) {
 
-        var userSessions = sessionRepository.findAllByUsers(userIds);
+        var userSessions = sessionRepository.findAllKeysByUsers(userIds);
 
         for (var userSession : userSessions) {
             sessionPermissionRepository.addToUserSession(userSession, permissions);

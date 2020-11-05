@@ -1,7 +1,9 @@
 package ru.udya.sharedsession.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
+import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
+import com.haulmont.cuba.security.global.UserSession;
 import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.domain.SharedUserSessionId;
 
@@ -9,15 +11,20 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public interface SharedUserSessionRepository<ID extends Serializable> {
+public interface SharedUserSessionRepository<S extends SharedUserSession<ID>,
+        SID extends SharedUserSessionId<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserSessionRepository";
 
-    SharedUserSession<ID> findById(ID sharedId);
+    S findById(SID sharedId);
 
-    List<? extends SharedUserSession<ID>> findAllByUser(Id<User, UUID> userId);
+    List<S> findAllByUser(Id<User, UUID> userId);
 
-    List<? extends SharedUserSessionId<ID>> findAllKeysByUser(Id<User, UUID> userId);
+    List<SID> findAllKeysByUser(Id<User, UUID> userId);
 
-    void save(SharedUserSession<ID> sharedUserSession);
+    List<SID> findAllKeysByUsers(Ids<User, UUID> userId);
+
+    S createByCubaUserSession(UserSession cubaUserSession);
+
+    void save(S sharedUserSession);
 }

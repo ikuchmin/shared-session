@@ -1,4 +1,4 @@
-package ru.udya.sharedsession.cache;
+package ru.udya.sharedsession.redis.cache;
 
 import com.haulmont.cuba.security.global.UserSession;
 import io.lettuce.core.RedisClient;
@@ -12,7 +12,9 @@ import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ru.udya.sharedsession.redis.RedisSharedUserSessionRuntime;
+import ru.udya.sharedsession.cache.SharedUserSessionCache;
+import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
+import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -22,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Component(SharedUserSessionCache.NAME)
-public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache {
+public class Resp3BasedSharedUserSessionCache implements RedisSharedUserSessionCache {
 
     private static final Logger log = LoggerFactory.getLogger(Resp3BasedSharedUserSessionCache.class);
 
@@ -43,7 +45,7 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
                 this.invalidateConnection.sync();
 
         commands.clientTracking(TrackingArgs.Builder.enabled()
-                .bcast().prefixes(RedisSharedUserSessionRuntime.KEY_PREFIX));
+                .bcast().prefixes(RedisSharedUserSessionRepository.KEY_PREFIX));
         this.invalidateConnection.addListener(message -> {
 
             if (message.getType().equals("invalidate")) {
@@ -69,18 +71,29 @@ public class Resp3BasedSharedUserSessionCache implements SharedUserSessionCache 
         });
     }
 
+//    @Override
+//    @SuppressWarnings("unchecked")
+//    public <T extends UserSession> T getFromCacheBySessionKey(
+//            String sessionKey, Function<String, T> getBySessionKeyId) {
+//
+//        return (T) cache.computeIfAbsent(sessionKey, getBySessionKeyId);
+//
+//    }
+//
+//    @Override
+//    public void saveInCache(String sessionKey, UserSession userSession) {
+//        cache.put(sessionKey, userSession);
+//    }
+
     @Override
-    @SuppressWarnings("unchecked")
-    public <T extends UserSession> T getFromCacheBySessionKey(
-            String sessionKey, Function<String, T> getBySessionKeyId) {
-
-        return (T) cache.computeIfAbsent(sessionKey, getBySessionKeyId);
-
+    public RedisSharedUserSession getFromCacheBySessionKey(String sessionKey,
+                                                           Function<String, RedisSharedUserSession> getBySessionKeyId) {
+        return null;
     }
 
     @Override
-    public void saveInCache(String sessionKey, UserSession userSession) {
-        cache.put(sessionKey, userSession);
+    public void saveInCache(RedisSharedUserSession redisSharedUserSession) {
+
     }
 
     @Override

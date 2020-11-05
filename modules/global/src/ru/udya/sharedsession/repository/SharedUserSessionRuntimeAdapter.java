@@ -12,7 +12,7 @@ import java.util.UUID;
 /**
  * Inspired by {@link org.springframework.session.SessionRepository}
  */
-public interface SharedUserSessionRuntimeAdapter extends UserSessionsAPI {
+public interface SharedUserSessionRuntimeAdapter {
 
     String NAME = "ss_SharedUserSessionRuntimeAdapter";
 
