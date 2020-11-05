@@ -1,7 +1,6 @@
 package ru.udya.sharedsession.redis.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
-import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.context.annotation.Primary;
@@ -11,13 +10,18 @@ import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @Primary
 @Component(SharedUserSessionRepository.NAME)
 public class RedisSharedUserSessionRepositoryCached
         implements RedisSharedUserSessionRepository {
+
+    protected Map<UUID, RedisSharedUserSessionId>
+            cubaSessionIdOnSharedUserSessionIdCache = new ConcurrentHashMap<>(3000);
 
     protected RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl;
 
@@ -33,18 +37,16 @@ public class RedisSharedUserSessionRepositoryCached
     }
 
     @Override
-    public List<RedisSharedUserSession> findAllByUser(Id<User, UUID> userId) {
-        return redisSharedUserSessionRepositoryImpl.findAllByUser(userId);
+    public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
+
+        return cubaSessionIdOnSharedUserSessionIdCache
+                .computeIfAbsent(cubaUserSessionId,
+                                 redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId);
     }
 
     @Override
-    public List<RedisSharedUserSessionId> findAllKeysByUser(Id<User, UUID> userId) {
-        return redisSharedUserSessionRepositoryImpl.findAllKeysByUser(userId);
-    }
-
-    @Override
-    public List<RedisSharedUserSessionId> findAllKeysByUsers(Ids<User, UUID> userId) {
-        return null;
+    public List<RedisSharedUserSessionId> findAllIdsByUser(Id<User, UUID> userId) {
+        return redisSharedUserSessionRepositoryImpl.findAllIdsByUser(userId);
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.haulmont.cuba.core.global.UuidProvider
 import com.haulmont.cuba.security.entity.EntityOp
 import com.haulmont.cuba.security.entity.User
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
-import ru.udya.sharedsession.domain.SharedUserSession
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
@@ -20,7 +19,7 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
 
     RedisSharedUserPermissionRepository permissionRepository
 
-    SharedUserSession sharedUserSession
+    RedisSharedUserSessionId sharedUserSession
 
     void setup() {
         def sharedUserSessionId = String.format(KEY_PATTERN, UuidProvider.createUuid(),

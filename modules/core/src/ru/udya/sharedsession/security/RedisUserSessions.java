@@ -28,12 +28,12 @@ public class RedisUserSessions implements UserSessionsAPI {
     @Nullable
     @Override
     public UserSession get(UUID id) {
-        return sharedUserSessionRepository.findById(id);
+        return sharedUserSessionRepository.findByCubaUserSessionId(id);
     }
 
     @Override
     public UserSession getNN(UUID id) {
-        UserSession userSession = sharedUserSessionRepository.findById(id);
+        UserSession userSession = sharedUserSessionRepository.findByCubaUserSessionId(id);
 
         if (userSession == null)
             throw new NoUserSessionException(id);
@@ -44,12 +44,12 @@ public class RedisUserSessions implements UserSessionsAPI {
     @Nullable
     @Override
     public UserSession getAndRefresh(UUID id) {
-        return sharedUserSessionRepository.findById(id);
+        return sharedUserSessionRepository.findByCubaUserSessionId(id);
     }
 
     @Override
     public UserSession getAndRefreshNN(UUID id) {
-        UserSession userSession = sharedUserSessionRepository.findById(id);
+        UserSession userSession = sharedUserSessionRepository.findByCubaUserSessionId(id);
 
         if (userSession == null)
             throw new NoUserSessionException(id);
@@ -60,12 +60,12 @@ public class RedisUserSessions implements UserSessionsAPI {
     @Nullable
     @Override
     public UserSession getAndRefresh(UUID id, boolean propagate) {
-        return sharedUserSessionRepository.findById(id);
+        return sharedUserSessionRepository.findByCubaUserSessionId(id);
     }
 
     @Override
     public UserSession getAndRefreshNN(UUID id, boolean propagate) {
-        UserSession userSession = sharedUserSessionRepository.findById(id);
+        UserSession userSession = sharedUserSessionRepository.findByCubaUserSessionId(id);
 
         if (userSession == null)
             throw new NoUserSessionException(id);

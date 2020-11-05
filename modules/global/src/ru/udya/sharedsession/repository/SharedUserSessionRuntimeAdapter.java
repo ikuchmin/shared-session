@@ -32,5 +32,7 @@ public interface SharedUserSessionRuntimeAdapter {
 
     void save(UserSession session);
 
-    UserSession findById(Serializable id);
+    UserSession findByCubaUserSessionId(UUID id);
+
+    UserSession findBySharedId(Serializable id);
 }

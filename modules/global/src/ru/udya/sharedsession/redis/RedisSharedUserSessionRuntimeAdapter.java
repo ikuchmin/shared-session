@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -87,12 +88,21 @@ public class RedisSharedUserSessionRuntimeAdapter
     }
 
     @Override
-    public UserSession findById(Serializable id) {
-        // todo check that session is exist
+    public UserSession findByCubaUserSessionId(UUID id) {
+        var sharedId = sharedUserSessionRepository
+                .findIdByCubaUserSessionId(id);
+
+        return new RedisSharedUserSessionAdapter(sharedId);
+    }
+
+    @Override
+    public UserSession findBySharedId(Serializable id) {
+
         return new RedisSharedUserSessionAdapter((String) id);
     }
 
-    protected class RedisSharedUserSessionAdapter extends UserSession {
+    protected class RedisSharedUserSessionAdapter extends UserSession
+            implements RedisSharedUserSessionId {
 
         private static final long serialVersionUID = 453371678445414846L;
 
@@ -107,7 +117,6 @@ public class RedisSharedUserSessionRuntimeAdapter
             this.sharedUserSessionId = RedisSharedUserSessionId.of(sharedUserSessionId);
         }
 
-
         @SuppressWarnings("UnusedReturnValue")
         protected RedisSharedUserSession safeUpdatingValue(Consumer<RedisSharedUserSession> updateFn) {
 
@@ -120,6 +129,14 @@ public class RedisSharedUserSessionRuntimeAdapter
 
             return getter.apply(sharedUserSession);
         }
+
+        // id
+
+        @Override
+        public String getSharedId() {
+            return sharedUserSessionId.getSharedId();
+        }
+
 
         // permission
 

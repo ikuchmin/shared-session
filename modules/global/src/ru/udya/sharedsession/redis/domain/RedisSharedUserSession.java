@@ -49,6 +49,21 @@ public class RedisSharedUserSession
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+
+        RedisSharedUserSession that = (RedisSharedUserSession) o;
+
+        return sharedId.equals(that.sharedId);
+    }
+
+    @Override
+    public int hashCode() {
+        return sharedId.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "RedisSharedUserSessionAdapter{" +
                "sharedId='" + sharedId + '\'' +

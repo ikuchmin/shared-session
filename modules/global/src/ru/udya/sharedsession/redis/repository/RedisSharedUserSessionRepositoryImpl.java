@@ -1,10 +1,9 @@
 package ru.udya.sharedsession.redis.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
-import com.haulmont.cuba.core.entity.contracts.Ids;
-import com.haulmont.cuba.core.global.UuidProvider;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
+import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
@@ -20,28 +19,38 @@ import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-@Component("ss_RedisSharedUserSessionRepositoryImpl")
+import static io.lettuce.core.ScanArgs.Builder.matches;
+
+@Component(RedisSharedUserSessionRepositoryImpl.NAME)
 public class RedisSharedUserSessionRepositoryImpl
         implements RedisSharedUserSessionRepository {
 
+    // don't remove it. It helps BeanLocator find proper class
+    public static final String NAME = "ss_RedisSharedUserSessionRepositoryImpl";
+
     protected RedisClient redisClient;
     protected RedisUserSessionCodec redisUserSessionCodec;
+    protected RedisSharedUserSessionIdTool redisRepositoryTool;
 
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
 
     public RedisSharedUserSessionRepositoryImpl(RedisClient redisClient,
-                                                RedisUserSessionCodec redisUserSessionCodec) {
+                                                RedisUserSessionCodec redisUserSessionCodec,
+                                                RedisSharedUserSessionIdTool redisRepositoryTool) {
         this.redisClient = redisClient;
         this.redisUserSessionCodec = redisUserSessionCodec;
+        this.redisRepositoryTool = redisRepositoryTool;
     }
 
     @PostConstruct
@@ -61,11 +70,13 @@ public class RedisSharedUserSessionRepositoryImpl
 
         try {
 
-            var sharedId = sharedUserSessionId.getSharedId();
+            var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSessionId);
 
-            asyncReadConnection.async()
-                               .get(sharedId)
-                               .get();
+            var userSession = asyncReadConnection.async()
+                                                 .get(redisKey)
+                                                 .get();
+
+            return RedisSharedUserSession.of(sharedUserSessionId, userSession);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -77,29 +88,82 @@ public class RedisSharedUserSessionRepositoryImpl
         } catch (RedisException e) {
             throw new SharedSessionException(e);
         }
+    }
 
-        return null;
+    @Nullable
+    @Override
+    public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
+        try {
+
+            var matcher = matches(KEY_PREFIX + ":*:" + cubaUserSessionId + ":" + COMMON_SUFFIX);
+
+
+            KeyScanCursor<String> cursor = asyncReadConnection.async()
+                                                              .scan(matcher)
+                                                              .get();
+            List<String> foundKeys = cursor.getKeys();
+
+            while (foundKeys.isEmpty() && ! cursor.isFinished()) {
+
+                cursor = asyncReadConnection.async()
+                                            .scan(cursor, matcher)
+                                            .get();
+
+                foundKeys = cursor.getKeys();
+            };
+
+            if (foundKeys.isEmpty()) {
+                return null;
+            }
+
+            var foundKeyWithoutSuffix = redisRepositoryTool.subtractCommonSuffix(foundKeys.get(0));
+
+            return RedisSharedUserSessionId.of(foundKeyWithoutSuffix);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during finding matched user session id", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during finding matched user session id", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
     }
 
     @Override
-    public List<RedisSharedUserSession> findAllByUser(Id<User, UUID> userId) {
-        return Collections.emptyList();
-    }
+    public List<RedisSharedUserSessionId> findAllIdsByUser(Id<User, UUID> userId) {
 
-    @Override
-    public List<RedisSharedUserSessionId> findAllKeysByUser(Id<User, UUID> userId) {
-        return Collections.emptyList();
-    }
+        try {
 
-    @Override
-    public List<RedisSharedUserSessionId> findAllKeysByUsers(Ids<User, UUID> userId) {
-        return null;
+            var matcher = KEY_PREFIX + ":" + userId.getValue() + ":*:" + COMMON_SUFFIX;
+
+            var foundKeys = asyncReadConnection.async()
+                                               .keys(matcher)
+                                               .get();
+
+            return foundKeys.stream()
+                            .map(redisRepositoryTool::subtractCommonSuffix)
+                            .map(RedisSharedUserSessionId::of)
+                            .collect(Collectors.toList());
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during finding matched user session id", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during finding matched user session id", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
     }
 
     @Override
     public RedisSharedUserSession createByCubaUserSession(UserSession cubaUserSession) {
         var sharedUserSession = RedisSharedUserSession
-                .of(createSharedUserSessionId(cubaUserSession), cubaUserSession);
+                .of(redisRepositoryTool.createSharedUserSessionId(cubaUserSession), cubaUserSession);
 
         save(sharedUserSession);
 
@@ -109,12 +173,12 @@ public class RedisSharedUserSessionRepositoryImpl
     @Override
     public void save(RedisSharedUserSession sharedUserSession) {
 
-        var sharedId = sharedUserSession.getSharedId();
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSession);
 
         try {
 
             asyncReadConnection.async()
-                               .set(sharedId, sharedUserSession.getCubaUserSession());
+                               .set(redisKey, sharedUserSession.getCubaUserSession());
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
@@ -163,19 +227,4 @@ public class RedisSharedUserSessionRepositoryImpl
             throw new SharedSessionException(e);
         }
     }
-
-    // don't use Id<> because it is internal API
-    protected String createSharedUserSessionId(UUID userId, UUID sessionId) {
-        return String.format(KEY_PATTERN, userId, sessionId);
-    }
-
-    protected String createSharedUserSessionId(UserSession userSession) {
-        return createSharedUserSessionId(userSession.getUser().getId(), userSession.getId());
-    }
-
-    protected UUID extractUserSessionIdFromSharedUserSessionKey(String sharedUserSessionKey) {
-        var sessionKeyParts = sharedUserSessionKey.split(":");
-        return UuidProvider.fromString(sessionKeyParts[3]);
-    }
-
 }

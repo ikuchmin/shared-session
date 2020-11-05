@@ -103,6 +103,6 @@ public class SharedUserSessionStandardSerialization
         SharedUserSessionRuntimeAdapter sharedUserSessionRepository =
                 AppBeans.get(SharedUserSessionRuntimeAdapter.class);
 
-        return sharedUserSessionRepository.findById(sessionId);
+        return sharedUserSessionRepository.findBySharedId(sessionId);
     }
 }

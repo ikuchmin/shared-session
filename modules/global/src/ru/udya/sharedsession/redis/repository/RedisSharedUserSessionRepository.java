@@ -9,10 +9,12 @@ import java.util.function.Consumer;
 public interface RedisSharedUserSessionRepository
         extends SharedUserSessionRepository<RedisSharedUserSession, RedisSharedUserSessionId, String> {
 
-    public static final String KEY_PREFIX = "shared:session";
+    String KEY_PREFIX = "shared:session";
 
     // shared:session:userId:sessionId
-    public static final String KEY_PATTERN = KEY_PREFIX + ":" + "%s:%s";
+    String KEY_PATTERN = KEY_PREFIX + ":" + "%s:%s";
+
+    String COMMON_SUFFIX = "common";
 
     RedisSharedUserSession updateByFn(RedisSharedUserSessionId redisSharedUserSessionId,
                                       Consumer<RedisSharedUserSession> updateFn);

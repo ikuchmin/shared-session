@@ -20,20 +20,23 @@ import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-@Component("ss_RedisSharedUserPermissionRepositoryImpl")
+@Component(RedisSharedUserPermissionRepositoryImpl.NAME)
 public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserPermissionRepository {
+
+    public static final String NAME = "ss_RedisSharedUserPermissionRepositoryImpl";
 
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
     protected SharedUserPermissionStringRepresentationHelper stringRepresentationHelper;
 
-    protected StatefulRedisConnection<String, SharedUserPermission> asyncConnection;
+    protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
 
 
     public RedisSharedUserPermissionRepositoryImpl(RedisClient redisClient,
@@ -47,20 +50,25 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        this.asyncConnection = redisClient.connect(userPermissionCodec);
+        this.asyncReadConnection = redisClient.connect(userPermissionCodec);
+    }
+
+    @PreDestroy
+    public void close() {
+        asyncReadConnection.close();
     }
 
     @Override
     public List<SharedUserPermission> findAllByUserSession(RedisSharedUserSessionId userSession) {
 
-        var redisKey = createSharedUserSessionPermissionKey(userSession);
+        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
-            var readedPermissions = asyncConnection.async()
-                                                   .smembers(redisKey)
-                                                   .get();
+            var readPermissions = asyncReadConnection.async()
+                                                     .smembers(redisKey)
+                                                     .get();
 
-            return new ArrayList<>(readedPermissions);
+            return new ArrayList<>(readPermissions);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -117,7 +125,7 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
     public <T extends SharedUserPermission> List<T> internalFindPermissionsByUserSessionAndType(
             RedisSharedUserSessionId userSession, Class<T> permissionType) {
 
-        var redisKey = createSharedUserSessionPermissionKey(userSession);
+        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             String typePrefix = stringRepresentationHelper
@@ -125,9 +133,9 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
 
             var matches = ScanArgs.Builder.matches(typePrefix + ":*");
 
-            var cursor = asyncConnection.async()
-                                        .sscan(redisKey, matches)
-                                        .get();
+            var cursor = asyncReadConnection.async()
+                                            .sscan(redisKey, matches)
+                                            .get();
 
 
             //noinspection unchecked
@@ -151,12 +159,12 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
     @Override
     public boolean doesHavePermission(RedisSharedUserSessionId userSession, SharedUserPermission permission) {
 
-        var redisKey = createSharedUserSessionPermissionKey(userSession);
+        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
-            return asyncConnection.async()
-                                  .sismember(redisKey, permission)
-                                  .get();
+            return asyncReadConnection.async()
+                                      .sismember(redisKey, permission)
+                                      .get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -179,7 +187,7 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
                           .collect(Collectors.toList());
 
         // todo use this when redis 6.2.0 will be released
-//        var redisKey = createSharedUserSessionPermissionKey(userSession);
+//        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
 //
 //        try {
 //            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
@@ -215,14 +223,14 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
             return;
         }
 
-        var redisKey = createSharedUserSessionPermissionKey(userSession);
+        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
 
-            asyncConnection.async()
-                           .sadd(redisKey, permissionsArray)
-                           .get();
+            asyncReadConnection.async()
+                               .sadd(redisKey, permissionsArray)
+                               .get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -237,7 +245,7 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
 
     }
 
-    protected String createSharedUserSessionPermissionKey(RedisSharedUserSessionId sharedUserSession) {
+    protected String createSharedUserSessionRedisPermissionKey(RedisSharedUserSessionId sharedUserSession) {
         return sharedUserSession.getSharedId() + ":" + PERMISSION_SUFFIX;
     }
 }

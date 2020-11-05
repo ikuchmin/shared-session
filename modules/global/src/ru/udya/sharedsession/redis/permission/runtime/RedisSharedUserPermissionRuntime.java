@@ -121,10 +121,10 @@ public class RedisSharedUserPermissionRuntime
 
     @Override
     public void grantPermissionToAllUserSessions(Id<User, UUID> userId, SharedUserPermission permission) {
-        var userSessions = sessionRepository.findAllByUser(userId);
+        var userSessionsIds = sessionRepository.findAllIdsByUser(userId);
 
-        for (var userSession : userSessions) {
-            sessionPermissionRepository.addToUserSession(userSession, permission);
+        for (var userSessionId : userSessionsIds) {
+            sessionPermissionRepository.addToUserSession(userSessionId, permission);
         }
     }
 
@@ -132,10 +132,10 @@ public class RedisSharedUserPermissionRuntime
     public void grantPermissionsToAllUserSessions(Id<User, UUID> userId,
                                                   List<? extends SharedUserPermission> permissions) {
 
-        var userSessions = sessionRepository.findAllByUser(userId);
+        var userSessionsIds = sessionRepository.findAllIdsByUser(userId);
 
-        for (var userSession : userSessions) {
-            sessionPermissionRepository.addToUserSession(userSession, permissions);
+        for (var userSessionId : userSessionsIds) {
+            sessionPermissionRepository.addToUserSession(userSessionId, permissions);
         }
     }
 
@@ -143,22 +143,17 @@ public class RedisSharedUserPermissionRuntime
     public void grantPermissionToAllUsersSessions(Ids<User, UUID> userIds,
                                                   SharedUserPermission permission) {
 
-        var userSessions = sessionRepository.findAllKeysByUsers(userIds);
-
-        for (var userSession : userSessions) {
-            sessionPermissionRepository.addToUserSession(userSession, permission);
-        }
+        userIds.getValues().stream()
+               .flatMap(uId -> sessionRepository.findAllIdsByUser(Id.of(uId, User.class)).stream())
+               .forEach(s -> sessionPermissionRepository.addToUserSession(s, permission));
     }
 
     @Override
     public void grantPermissionsToAllUsersSessions(Ids<User, UUID> userIds,
                                                    List<? extends SharedUserPermission> permissions) {
 
-        var userSessions = sessionRepository.findAllKeysByUsers(userIds);
-
-        for (var userSession : userSessions) {
-            sessionPermissionRepository.addToUserSession(userSession, permissions);
-        }
-
+        userIds.getValues().stream()
+               .flatMap(uId -> sessionRepository.findAllIdsByUser(Id.of(uId, User.class)).stream())
+               .forEach(s -> sessionPermissionRepository.addToUserSession(s, permissions));
     }
 }
