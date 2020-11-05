@@ -4,6 +4,7 @@ import com.haulmont.cuba.core.global.UuidProvider;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
+import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 
 import java.util.UUID;
 
@@ -21,8 +22,8 @@ public class RedisSharedUserSessionIdTool {
         return createSharedUserSessionId(userSession.getUser().getId(), userSession.getId());
     }
 
-    public UUID extractUserSessionIdFromSharedUserSessionKey(String sharedUserSessionKey) {
-        var sessionKeyParts = sharedUserSessionKey.split(":");
+    public UUID extractCubaUserSessionIdFromSharedUserSessionId(RedisSharedUserSessionId sharedUserSessionId) {
+        var sessionKeyParts = sharedUserSessionId.getSharedId().split(RedisSharedUserSessionRepository.DELIMITER);
         return UuidProvider.fromString(sessionKeyParts[3]);
     }
 

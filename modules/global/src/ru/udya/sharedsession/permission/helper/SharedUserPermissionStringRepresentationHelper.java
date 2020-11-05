@@ -16,6 +16,8 @@ import static io.vavr.Predicates.instanceOf;
 @Component("ss_SharedUserPermissionStringRepresentationHelper")
 public class SharedUserPermissionStringRepresentationHelper {
 
+    public static final String DELIMITER = ":";
+
     public static final String PERMISSION_ENTITY_PREFIX = "entity";
 
     public static final String PERMISSION_ENTITY_ATTRIBUTE_PREFIX = "entity_attribute";
@@ -111,7 +113,7 @@ public class SharedUserPermissionStringRepresentationHelper {
 
     public SharedUserPermission convertStringToPermission(String stringRepresentation) {
 
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return Match(stringRepresentationParts[0]).of(
                 Case($(PERMISSION_ENTITY_PREFIX), t -> convertStringToEntityPermission(stringRepresentation)),
@@ -125,7 +127,7 @@ public class SharedUserPermissionStringRepresentationHelper {
     }
 
     public SharedUserEntityPermission convertStringToEntityPermission(String stringRepresentation) {
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return SharedUserPermission.entityPermission(stringRepresentationParts[1],
                                                      stringRepresentationParts[2],
@@ -133,7 +135,7 @@ public class SharedUserPermissionStringRepresentationHelper {
     }
 
     public SharedUserEntityAttributePermission convertStringToEntityAttributePermission(String stringRepresentation) {
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return SharedUserPermission.entityAttributePermission(stringRepresentationParts[1],
                                                               stringRepresentationParts[2],
@@ -143,21 +145,21 @@ public class SharedUserPermissionStringRepresentationHelper {
     }
 
     public SharedUserSpecificPermission convertStringToSpecificPermission(String stringRepresentation) {
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return SharedUserPermission.specificPermission(stringRepresentationParts[1],
                                                        stringRepresentationParts[2]);
     }
 
     public SharedUserScreenPermission convertStringToScreenPermission(String stringRepresentation) {
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return SharedUserPermission.screenPermission(stringRepresentationParts[1],
                                                      stringRepresentationParts[2]);
     }
 
     public SharedUserScreenElementPermission convertStringToScreenElementPermission(String stringRepresentation) {
-        var stringRepresentationParts = stringRepresentation.split(":");
+        var stringRepresentationParts = stringRepresentation.split(DELIMITER);
 
         return SharedUserPermission.screenElementPermission(stringRepresentationParts[1],
                                                             stringRepresentationParts[2],

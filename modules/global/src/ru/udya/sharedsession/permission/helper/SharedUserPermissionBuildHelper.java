@@ -20,6 +20,11 @@ public class SharedUserPermissionBuildHelper {
 
     protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
 
+    public SharedUserPermissionBuildHelper(
+            CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper) {
+        this.cubaPermissionStringRepresentationHelper = cubaPermissionStringRepresentationHelper;
+    }
+
     public SharedUserPermission buildPermissionByWindowAlias(String windowAlias) {
 
         return SharedUserPermission.screenPermission(windowAlias, WILDCARD);

@@ -16,6 +16,8 @@ public interface RedisSharedUserSessionRepository
 
     String COMMON_SUFFIX = "common";
 
+    String DELIMITER = ":";
+
     RedisSharedUserSession updateByFn(RedisSharedUserSessionId redisSharedUserSessionId,
                                       Consumer<RedisSharedUserSession> updateFn);
 }

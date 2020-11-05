@@ -20,6 +20,8 @@ import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDC
 @Component("ss_CubaPermissionStringRepresentationHelper")
 public class CubaPermissionStringRepresentationHelper {
 
+    public static final String DELIMITER = ":";
+
     public static final String CUBA_PERMISSION_ENTITY_PATTERN = "%s:%s";
     public static final String CUBA_PERMISSION_ENTITY_ATTRIBUTE_PATTERN = "%s:%s";
     public static final String CUBA_PERMISSION_SPECIFIC_PATTERN = "%s";
@@ -53,12 +55,12 @@ public class CubaPermissionStringRepresentationHelper {
     }
 
     public SharedUserEntityPermission convertCubaEntityPermissionToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
+        var targetParts = cubaTarget.split(DELIMITER);
         return SharedUserPermission.entityPermission(targetParts[0], WILDCARD, targetParts[1]);
     }
 
     public SharedUserEntityAttributePermission convertCubaEntityAttributePermissionToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
+        var targetParts = cubaTarget.split(DELIMITER);
         return SharedUserPermission.entityAttributePermission(targetParts[0], WILDCARD,
                                                               targetParts[1], WILDCARD,
                                                               EntityAttrAccess.fromId(value)
@@ -74,7 +76,7 @@ public class CubaPermissionStringRepresentationHelper {
     }
 
     public SharedUserScreenElementPermission convertCubaUIPermissionToSharedUserPermission(String cubaTarget, int value) {
-        var targetParts = cubaTarget.split(cubaTarget);
+        var targetParts = cubaTarget.split(DELIMITER);
         return SharedUserPermission.screenElementPermission(targetParts[0], targetParts[1],
                                                             ScreenComponentPermission.fromId(value)
                                                                                      .name().toLowerCase());

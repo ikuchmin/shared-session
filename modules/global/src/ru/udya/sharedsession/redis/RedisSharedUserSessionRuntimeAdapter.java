@@ -20,6 +20,7 @@ import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissi
 import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 import ru.udya.sharedsession.redis.runtime.RedisSharedUserSessionRuntime;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import javax.annotation.Nullable;
@@ -44,17 +45,19 @@ public class RedisSharedUserSessionRuntimeAdapter
     protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
     protected CubaPermissionBuildHelper cubaPermissionBuildHelper;
 
+    protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
+
     protected RedisSharedUserSessionRuntime sharedUserSessionRuntime;
     protected RedisSharedUserPermissionRuntime sharedUserPermissionRuntime;
 
     protected RedisSharedUserSessionRepository sharedUserSessionRepository;
     protected RedisSharedUserPermissionRepository sharedUserPermissionRepository;
 
-
     public RedisSharedUserSessionRuntimeAdapter(
             SharedUserPermissionBuildHelper sharedPermissionBuildHelper,
             CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper,
             CubaPermissionBuildHelper cubaPermissionBuildHelper,
+            RedisSharedUserSessionIdTool redisSharedUserSessionIdTool,
             RedisSharedUserSessionRuntime sharedUserSessionRuntime,
             RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
             RedisSharedUserSessionRepository sharedUserSessionRepository,
@@ -62,6 +65,7 @@ public class RedisSharedUserSessionRuntimeAdapter
         this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
         this.cubaPermissionStringRepresentationHelper = cubaPermissionStringRepresentationHelper;
         this.cubaPermissionBuildHelper = cubaPermissionBuildHelper;
+        this.redisSharedUserSessionIdTool = redisSharedUserSessionIdTool;
         this.sharedUserSessionRuntime = sharedUserSessionRuntime;
         this.sharedUserPermissionRuntime = sharedUserPermissionRuntime;
         this.sharedUserSessionRepository = sharedUserSessionRepository;
@@ -106,11 +110,15 @@ public class RedisSharedUserSessionRuntimeAdapter
 
         private static final long serialVersionUID = 453371678445414846L;
 
+        protected UUID cubaSessionId;
+
         protected RedisSharedUserSessionId sharedUserSessionId;
 
         public RedisSharedUserSessionAdapter(
                 RedisSharedUserSessionId sharedUserSessionId) {
             this.sharedUserSessionId = sharedUserSessionId;
+            this.cubaSessionId = redisSharedUserSessionIdTool
+                    .extractCubaUserSessionIdFromSharedUserSessionId(sharedUserSessionId);
         }
 
         public RedisSharedUserSessionAdapter(String sharedUserSessionId) {
@@ -131,6 +139,11 @@ public class RedisSharedUserSessionRuntimeAdapter
         }
 
         // id
+
+        @Override
+        public UUID getId() {
+            return cubaSessionId;
+        }
 
         @Override
         public String getSharedId() {

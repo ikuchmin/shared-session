@@ -192,14 +192,16 @@ public class RedisSharedUserSessionRepositoryImpl
     public RedisSharedUserSession updateByFn(RedisSharedUserSessionId redisSharedUserSessionId,
                                              Consumer<RedisSharedUserSession> updateFn) {
 
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(redisSharedUserSessionId);
+
         try (StatefulRedisConnection<String, UserSession> writeConnection =
                      redisClient.connect(redisUserSessionCodec)) {
 
             RedisCommands<String, UserSession> sync = writeConnection.sync();
 
-            sync.watch(redisSharedUserSessionId.getSharedId());
+            sync.watch(redisKey);
 
-            UserSession sessionFromRedis = sync.get(redisSharedUserSessionId.getSharedId());
+            UserSession sessionFromRedis = sync.get(redisKey);
             if (sessionFromRedis == null) {
                 throw new SharedSessionNotFoundException(String.format("Session isn't found in Redis storage (Key: %s)", redisSharedUserSessionId));
             }
@@ -211,7 +213,7 @@ public class RedisSharedUserSessionRepositoryImpl
             updateFn.accept(updateSharedUserSession);
 
             sync.multi();
-            sync.set(redisSharedUserSessionId.getSharedId(), sessionFromRedis);
+            sync.set(redisKey, sessionFromRedis);
 
             TransactionResult transactionResult = sync.exec();
             if (transactionResult.wasDiscarded()) {
