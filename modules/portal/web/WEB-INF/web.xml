@@ -15,7 +15,7 @@
     <!--Application components-->
     <context-param>
         <param-name>appComponents</param-name>
-        <param-value>com.haulmont.cuba</param-value>
+        <param-value>com.haulmont.cuba ru.udya.querydsl.cuba</param-value>
     </context-param>
 
     <listener>
