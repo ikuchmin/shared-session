@@ -15,7 +15,7 @@ import static ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepos
 
 class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpecification {
 
-    RedisSharedUserPermissionRuntime testClass
+    RedisSharedUserSessionPermissionRuntime testClass
 
     RedisSharedUserPermissionRepository permissionRepository
 
@@ -29,7 +29,7 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
 
         permissionRepository = AppBeans.get(RedisSharedUserPermissionRepository)
 
-        testClass = AppBeans.get(RedisSharedUserPermissionRuntime)
+        testClass = AppBeans.get(RedisSharedUserSessionPermissionRuntime)
     }
 
     def "check that all entity permissions granted can be proved by concrete permissions"() {

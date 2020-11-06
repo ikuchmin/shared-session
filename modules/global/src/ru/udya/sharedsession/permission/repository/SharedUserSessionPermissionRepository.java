@@ -11,10 +11,10 @@ import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 import java.io.Serializable;
 import java.util.List;
 
-public interface SharedUserPermissionRepository
+public interface SharedUserSessionPermissionRepository
         <S extends SharedUserSessionId<ID>, ID extends Serializable> {
 
-    String NAME = "ss_SharedUserPermissionRepository";
+    String NAME = "ss_SharedUserSessionPermissionRepository";
 
     List<SharedUserPermission> findAllByUserSession(S userSession);
 
@@ -34,5 +34,9 @@ public interface SharedUserPermissionRepository
 
     void addToUserSession(S userSession, SharedUserPermission permission);
 
-    void addToUserSession(S userSession, List<? extends SharedUserPermission> permission);
+    void addToUserSession(S userSession, List<? extends SharedUserPermission> permissions);
+
+    void removeFromUserSession(S userSession, SharedUserPermission permission);
+
+    void removeFromUserSession(S userSession, List<? extends SharedUserPermission> permissions);
 }

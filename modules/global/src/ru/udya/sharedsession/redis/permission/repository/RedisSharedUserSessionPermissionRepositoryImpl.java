@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-@Component(RedisSharedUserPermissionRepositoryImpl.NAME)
-public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserPermissionRepository {
+@Component(RedisSharedUserSessionPermissionRepositoryImpl.NAME)
+public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisSharedUserPermissionRepository {
 
-    public static final String NAME = "ss_RedisSharedUserPermissionRepositoryImpl";
+    public static final String NAME = "ss_RedisSharedUserSessionPermissionRepositoryImpl";
 
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
@@ -39,9 +39,9 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
     protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
 
 
-    public RedisSharedUserPermissionRepositoryImpl(RedisClient redisClient,
-                                                   RedisSharedUserPermissionCodec userPermissionCodec,
-                                                   SharedUserPermissionStringRepresentationHelper stringRepresentationHelper) {
+    public RedisSharedUserSessionPermissionRepositoryImpl(RedisClient redisClient,
+                                                          RedisSharedUserPermissionCodec userPermissionCodec,
+                                                          SharedUserPermissionStringRepresentationHelper stringRepresentationHelper) {
         this.redisClient = redisClient;
         this.userPermissionCodec = userPermissionCodec;
         this.stringRepresentationHelper = stringRepresentationHelper;
@@ -237,6 +237,43 @@ public class RedisSharedUserPermissionRepositoryImpl implements RedisSharedUserP
             throw new SharedSessionReadingException("Thread is interrupted by external process during adding permissions to user", e);
         } catch (ExecutionException e) {
             throw new SharedSessionReadingException("Exception during adding permissions to user", e);
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
+
+    }
+
+    @Override
+    public void removeFromUserSession(RedisSharedUserSessionId userSession, SharedUserPermission permission) {
+        this.removeFromUserSession(userSession, Collections.singletonList(permission));
+    }
+
+    @Override
+    public void removeFromUserSession(RedisSharedUserSessionId userSession,
+                                      List<? extends SharedUserPermission> permissions) {
+
+        // there is because lettuce can't
+        // work properly with empty collections
+        if (permissions.isEmpty()) {
+            return;
+        }
+
+        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+
+        try {
+            var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
+
+            asyncReadConnection.async()
+                               .srem(redisKey, permissionsArray)
+                               .get();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during removing permissions from user session", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during removing permissions from user session", e);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {

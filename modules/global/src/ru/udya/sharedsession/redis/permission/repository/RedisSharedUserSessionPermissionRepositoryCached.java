@@ -8,19 +8,19 @@ import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
-import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
+import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 
 import java.util.List;
 
 @Primary
-@Component(SharedUserPermissionRepository.NAME)
-public class RedisSharedUserPermissionRepositoryCached implements RedisSharedUserPermissionRepository{
+@Component(SharedUserSessionPermissionRepository.NAME)
+public class RedisSharedUserSessionPermissionRepositoryCached implements RedisSharedUserPermissionRepository{
 
-    protected RedisSharedUserPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl;
+    protected RedisSharedUserSessionPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl;
 
-    public RedisSharedUserPermissionRepositoryCached(
-            RedisSharedUserPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl) {
+    public RedisSharedUserSessionPermissionRepositoryCached(
+            RedisSharedUserSessionPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl) {
         this.redisSharedUserPermissionRepositoryImpl = redisSharedUserPermissionRepositoryImpl;
     }
 
@@ -75,5 +75,16 @@ public class RedisSharedUserPermissionRepositoryCached implements RedisSharedUse
     public void addToUserSession(RedisSharedUserSessionId userSession,
                                  List<? extends SharedUserPermission> permissions) {
         redisSharedUserPermissionRepositoryImpl.addToUserSession(userSession, permissions);
+    }
+
+    @Override
+    public void removeFromUserSession(RedisSharedUserSessionId userSession, SharedUserPermission permission) {
+        redisSharedUserPermissionRepositoryImpl.removeFromUserSession(userSession, permission);
+    }
+
+    @Override
+    public void removeFromUserSession(RedisSharedUserSessionId userSession,
+                                      List<? extends SharedUserPermission> permissions) {
+        redisSharedUserPermissionRepositoryImpl.removeFromUserSession(userSession, permissions);
     }
 }

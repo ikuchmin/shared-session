@@ -8,7 +8,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermissi
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
-import ru.udya.sharedsession.permission.runtime.SharedUserPermissionRuntime;
+import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
@@ -19,16 +19,16 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-@Component(SharedUserPermissionRuntime.NAME)
-public class RedisSharedUserPermissionRuntime
-        implements SharedUserPermissionRuntime<RedisSharedUserSessionId, String> {
+@Component(SharedUserSessionPermissionRuntime.NAME)
+public class RedisSharedUserSessionPermissionRuntime
+        implements SharedUserSessionPermissionRuntime<RedisSharedUserSessionId, String> {
 
     protected SharedUserPermissionParentHelper permissionParentHelper;
 
     protected RedisSharedUserSessionRepository sessionRepository;
     protected RedisSharedUserPermissionRepository sessionPermissionRepository;
 
-    public RedisSharedUserPermissionRuntime(
+    public RedisSharedUserSessionPermissionRuntime(
             SharedUserPermissionParentHelper permissionParentHelper,
             RedisSharedUserSessionRepository sessionRepository,
             RedisSharedUserPermissionRepository sessionPermissionRepository) {
@@ -155,5 +155,76 @@ public class RedisSharedUserPermissionRuntime
         userIds.getValues().stream()
                .flatMap(uId -> sessionRepository.findAllIdsByUser(Id.of(uId, User.class)).stream())
                .forEach(s -> sessionPermissionRepository.addToUserSession(s, permissions));
+    }
+
+    @Override
+    public void revokePermissionFromUserSession(RedisSharedUserSessionId userSession,
+                                                SharedUserPermission permission) {
+
+        sessionPermissionRepository.removeFromUserSession(userSession, permission);
+
+    }
+
+    @Override
+    public void revokePermissionsFromUserSession(RedisSharedUserSessionId userSession,
+                                                 List<? extends SharedUserPermission> permission) {
+        sessionPermissionRepository.removeFromUserSession(userSession, permission);
+    }
+
+    @Override
+    public void revokePermissionFromUserSessions(List<? extends RedisSharedUserSessionId> userSessions,
+                                                 SharedUserPermission permission) {
+
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.removeFromUserSession(userSession, permission);
+        }
+    }
+
+    @Override
+    public void revokePermissionsFromUserSessions(List<? extends RedisSharedUserSessionId> userSessions,
+                                                  List<? extends SharedUserPermission> permissions) {
+
+        for (var userSession : userSessions) {
+            sessionPermissionRepository.removeFromUserSession(userSession, permissions);
+        }
+    }
+
+    @Override
+    public void revokePermissionFromAllUserSessions(Id<User, UUID> userId, SharedUserPermission permission) {
+        var userSessionsIds = sessionRepository.findAllIdsByUser(userId);
+
+        for (var userSessionId : userSessionsIds) {
+            sessionPermissionRepository.removeFromUserSession(userSessionId, permission);
+        }
+    }
+
+    @Override
+    public void revokePermissionsFromAllUserSessions(Id<User, UUID> userId,
+                                                     List<? extends SharedUserPermission> permissions) {
+
+        var userSessionsIds = sessionRepository.findAllIdsByUser(userId);
+
+        for (var userSessionId : userSessionsIds) {
+            sessionPermissionRepository.addToUserSession(userSessionId, permissions);
+        }
+    }
+
+    @Override
+    public void revokePermissionFromAllUsersSessions(Ids<User, UUID> userIds,
+                                                     SharedUserPermission permission) {
+
+        userIds.getValues().stream()
+               .flatMap(uId -> sessionRepository.findAllIdsByUser(Id.of(uId, User.class)).stream())
+               .forEach(s -> sessionPermissionRepository.removeFromUserSession(s, permission));
+
+    }
+
+    @Override
+    public void revokePermissionsFromAllUsersSessions(Ids<User, UUID> userIds,
+                                                      List<? extends SharedUserPermission> permissions) {
+
+        userIds.getValues().stream()
+               .flatMap(uId -> sessionRepository.findAllIdsByUser(Id.of(uId, User.class)).stream())
+               .forEach(s -> sessionPermissionRepository.removeFromUserSession(s, permissions));
     }
 }

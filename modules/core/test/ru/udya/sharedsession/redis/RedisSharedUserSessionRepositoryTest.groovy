@@ -26,7 +26,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
 //                                          AppBeans.get(SharedUserPermissionBuildHelper),
 //                                          AppBeans.get(CubaPermissionStringRepresentationHelper),
 //                                          AppBeans.get(CubaPermissionBuildHelper),
-//                                          AppBeans.get(RedisSharedUserPermissionRuntime),
+//                                          AppBeans.get(RedisSharedUserSessionPermissionRuntime),
 //                                          AppBeans.get(RedisSharedUserPermissionRepository)])
     }
 
@@ -117,7 +117,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
 //                AppBeans.get(SharedUserPermissionBuildHelper),
 //                AppBeans.get(CubaPermissionStringRepresentationHelper),
 //                AppBeans.get(CubaPermissionBuildHelper),
-//                AppBeans.get(RedisSharedUserPermissionRuntime),
+//                AppBeans.get(RedisSharedUserSessionPermissionRuntime),
 //                AppBeans.get(RedisSharedUserPermissionRepository))
 //        overridedTestClass.init()
 //

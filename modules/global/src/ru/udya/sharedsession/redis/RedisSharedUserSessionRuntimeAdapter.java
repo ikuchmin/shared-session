@@ -17,7 +17,7 @@ import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
-import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserPermissionRuntime;
+import ru.udya.sharedsession.redis.permission.runtime.RedisSharedUserSessionPermissionRuntime;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 import ru.udya.sharedsession.redis.runtime.RedisSharedUserSessionRuntime;
 import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
@@ -48,7 +48,7 @@ public class RedisSharedUserSessionRuntimeAdapter
     protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
 
     protected RedisSharedUserSessionRuntime sharedUserSessionRuntime;
-    protected RedisSharedUserPermissionRuntime sharedUserPermissionRuntime;
+    protected RedisSharedUserSessionPermissionRuntime sharedUserPermissionRuntime;
 
     protected RedisSharedUserSessionRepository sharedUserSessionRepository;
     protected RedisSharedUserPermissionRepository sharedUserPermissionRepository;
@@ -59,7 +59,7 @@ public class RedisSharedUserSessionRuntimeAdapter
             CubaPermissionBuildHelper cubaPermissionBuildHelper,
             RedisSharedUserSessionIdTool redisSharedUserSessionIdTool,
             RedisSharedUserSessionRuntime sharedUserSessionRuntime,
-            RedisSharedUserPermissionRuntime sharedUserPermissionRuntime,
+            RedisSharedUserSessionPermissionRuntime sharedUserPermissionRuntime,
             RedisSharedUserSessionRepository sharedUserSessionRepository,
             RedisSharedUserPermissionRepository sharedUserPermissionRepository) {
         this.sharedPermissionBuildHelper = sharedPermissionBuildHelper;
