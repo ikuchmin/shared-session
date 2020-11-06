@@ -8,7 +8,7 @@ import ru.udya.sharedsession.permission.domain.SharedUserEntityAttributePermissi
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionParentHelper;
-import ru.udya.sharedsession.permission.runtime.SharedUserSessionPermissionRuntime;
+import ru.udya.sharedsession.permission.runtime.SharedUserPermissionRuntime;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
@@ -19,9 +19,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-@Component(SharedUserSessionPermissionRuntime.NAME)
+@Component(SharedUserPermissionRuntime.NAME)
 public class RedisSharedUserPermissionRuntime
-        implements SharedUserSessionPermissionRuntime<RedisSharedUserSessionId, String> {
+        implements SharedUserPermissionRuntime<RedisSharedUserSessionId, String> {
 
     protected SharedUserPermissionParentHelper permissionParentHelper;
 

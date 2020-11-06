@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public interface SharedUserSessionPermissionRuntime<S extends SharedUserSessionId<ID>, ID extends Serializable> {
+public interface SharedUserPermissionRuntime<S extends SharedUserSessionId<ID>, ID extends Serializable> {
 
     String NAME = "ss_SharedUserPermissionRuntime";
 

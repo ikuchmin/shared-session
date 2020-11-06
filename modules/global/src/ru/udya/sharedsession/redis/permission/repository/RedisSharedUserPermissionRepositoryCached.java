@@ -8,13 +8,13 @@ import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
-import ru.udya.sharedsession.permission.repository.SharedUserSessionPermissionRepository;
+import ru.udya.sharedsession.permission.repository.SharedUserPermissionRepository;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 
 import java.util.List;
 
 @Primary
-@Component(SharedUserSessionPermissionRepository.NAME)
+@Component(SharedUserPermissionRepository.NAME)
 public class RedisSharedUserPermissionRepositoryCached implements RedisSharedUserPermissionRepository{
 
     protected RedisSharedUserPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl;

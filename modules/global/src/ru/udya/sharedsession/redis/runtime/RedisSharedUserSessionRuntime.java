@@ -38,8 +38,8 @@ public class RedisSharedUserSessionRuntime
         //noinspection ConstantConditions
         copyOfCubaUserSession.setJoinedRole(null);
 
-        var createdSharedUserSession =
-                sharedUserSessionRepository.createByCubaUserSession(cubaUserSession);
+        var createdSharedUserSession = sharedUserSessionRepository
+                .createByCubaUserSession(cubaUserSession);
 
 
         var sharedUserPermissions = sharedUserPermissionBuildHelper
