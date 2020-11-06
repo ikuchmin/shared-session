@@ -1,4 +1,3 @@
-
 buildscript {
     ext.cubaVersion = '7.2.4'
     repositories {
@@ -38,7 +37,7 @@ dependencies {
     appComponent('ru.udya.querydsl.cuba:querydsl-cuba-global:1.0.0')
 }
 
-def hsql = 'org.hsqldb:hsqldb:2.4.1'
+def postgres = 'org.postgresql:postgresql:42.2.9'
 
 configure([globalModule, coreModule, webModule, portalModule]) {
     apply(plugin: 'java')
@@ -146,8 +145,8 @@ configure(coreModule) {
     dependencies {
         compile(globalModule)
         compileOnly(servletApi)
-        jdbc(hsql)
-        testRuntime(hsql)
+        jdbc(postgres)
+        testRuntime(postgres)
     }
 
     task cleanConf(description: 'Cleans up conf directory', type: Delete) {
@@ -160,19 +159,9 @@ configure(coreModule) {
     }
 
     task createDb(dependsOn: assembleDbScripts, description: 'Creates local database', type: CubaDbCreation) {
-        dbms = 'hsql'
-        host = 'localhost:9010'
-        dbName = 'sharedsession-9Pt1N3FkM'
-        dbUser = 'sa'
-        dbPassword = ''
     }
 
     task updateDb(dependsOn: assembleDbScripts, description: 'Updates local database', type: CubaDbUpdate) {
-        dbms = 'hsql'
-        host = 'localhost:9010'
-        dbName = 'sharedsession-9Pt1N3FkM'
-        dbUser = 'sa'
-        dbPassword = ''
     }
 }
 
