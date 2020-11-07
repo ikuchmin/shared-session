@@ -9,6 +9,8 @@
         <property name="remoteServices">
             <map>
                 <entry key="ss_SharedUserPermissionService" value="ru.udya.sharedsession.service.SharedUserPermissionService "/>
+                <entry key="ss_SharedUserPermissionStorageItemRepositoryService"
+                       value="ru.udya.sharedsession.repository.SharedUserPermissionStorageItemRepositoryService"/>
             </map>
         </property>
     </bean>
