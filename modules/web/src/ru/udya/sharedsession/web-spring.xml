@@ -11,4 +11,13 @@
     <bean id="cuba_Connection"
           class="ru.udya.sharedsession.client.SharedSessionConnectionImpl"
           scope="vaadin"/>
+
+    <bean id="sharedsession_proxyCreator" class="com.haulmont.cuba.web.sys.remoting.WebRemoteProxyBeanCreator">
+        <property name="serverSelector" ref="cuba_ServerSelector"/>
+        <property name="remoteServices">
+            <map>
+                <entry key="ss_SharedUserPermissionService" value="ru.udya.sharedsession.service.SharedUserPermissionService "/>
+            </map>
+        </property>
+    </bean>
 </beans>

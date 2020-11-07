@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface SharedUserPermissionService {
 
-    String NAME = "ss_PermissionRuntimeService";
+    String NAME = "ss_SharedUserPermissionService";
 
     void grantPermissionToUser(Id<User, UUID> userId, SharedUserPermission permission);
 
