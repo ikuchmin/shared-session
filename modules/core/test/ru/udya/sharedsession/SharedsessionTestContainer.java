@@ -4,6 +4,7 @@ import com.haulmont.bali.util.Dom4j;
 import com.haulmont.cuba.testsupport.TestContainer;
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,25 +31,7 @@ public class SharedsessionTestContainer extends TestContainer {
                 // specifically for test environment. You can replace it with your own
                 // or add another one in the end.
                 "com/haulmont/cuba/testsupport/test-app.properties");
-        initDbProperties();
-    }
-
-    private void initDbProperties() {
-        File contextXmlFile = new File("modules/core/web/META-INF/context.xml");
-        if (!contextXmlFile.exists()) {
-            contextXmlFile = new File("web/META-INF/context.xml");
-        }
-        if (!contextXmlFile.exists()) {
-            throw new RuntimeException("Cannot find 'context.xml' file to read database connection properties. " +
-                    "You can set them explicitly in this method.");
-        }
-        Document contextXmlDoc = Dom4j.readDocument(contextXmlFile);
-        Element resourceElem = contextXmlDoc.getRootElement().element("Resource");
-
-        dbDriver = resourceElem.attributeValue("driverClassName");
-        dbUrl = resourceElem.attributeValue("url");
-        dbUser = resourceElem.attributeValue("username");
-        dbPassword = resourceElem.attributeValue("password");
+        autoConfigureDataSource();
     }
 
     public static class Common extends SharedsessionTestContainer {
@@ -61,16 +44,18 @@ public class SharedsessionTestContainer extends TestContainer {
         }
 
         @Override
-        public void before() throws Throwable {
+        public void beforeAll(ExtensionContext extensionContext) throws Exception {
             if (!initialized) {
-                super.before();
+                super.beforeAll(extensionContext);
                 initialized = true;
             }
             setupContext();
         }
 
+
+        @SuppressWarnings("RedundantThrows")
         @Override
-        public void after() {
+        public void afterAll(ExtensionContext extensionContext) throws Exception {
             cleanupContext();
             // never stops - do not call super
         }

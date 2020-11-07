@@ -11,11 +11,11 @@ import java.nio.ByteBuffer;
 @Component("ss_RedisUserPermissionCodec")
 public class RedisSharedUserPermissionCodec implements RedisCodec<String, SharedUserPermission> {
 
-    protected SharedUserPermissionStringRepresentationHelper stringRepresentationHelper;
+    protected SharedUserPermissionStringRepresentationHelper sharedPermissionStringHelper;
 
     public RedisSharedUserPermissionCodec(
-            SharedUserPermissionStringRepresentationHelper stringRepresentationHelper) {
-        this.stringRepresentationHelper = stringRepresentationHelper;
+            SharedUserPermissionStringRepresentationHelper sharedPermissionStringHelper) {
+        this.sharedPermissionStringHelper = sharedPermissionStringHelper;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class RedisSharedUserPermissionCodec implements RedisCodec<String, Shared
     public SharedUserPermission decodeValue(ByteBuffer buf) {
         var permission = StringCodec.UTF8.decodeKey(buf);
 
-        return stringRepresentationHelper
+        return sharedPermissionStringHelper
                 .convertStringToPermission(permission);
     }
 
@@ -38,7 +38,7 @@ public class RedisSharedUserPermissionCodec implements RedisCodec<String, Shared
 
     @Override
     public ByteBuffer encodeValue(SharedUserPermission permission) {
-        var redisKey = stringRepresentationHelper
+        var redisKey = sharedPermissionStringHelper
                 .convertPermissionToString(permission);
 
         return StringCodec.UTF8.encodeKey(redisKey);    }

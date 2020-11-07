@@ -8,6 +8,9 @@ import ru.udya.sharedsession.permission.domain.SharedUserScreenElementPermission
 import ru.udya.sharedsession.permission.domain.SharedUserScreenPermission;
 import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static io.vavr.API.$;
 import static io.vavr.API.Case;
 import static io.vavr.API.Match;
@@ -48,6 +51,13 @@ public class SharedUserPermissionStringRepresentationHelper {
     // screen:screenId:operation
     public static final String PERMISSION_SCREEN_ELEMENT_PATTERN =
             PERMISSION_SCREEN_ELEMENT_PREFIX + ":" + "%s:%s:%s";
+
+    public List<String> convertPermissionsToStrings(List<SharedUserPermission> permissions) {
+
+        return permissions.stream()
+                          .map(this::convertPermissionToString)
+                          .collect(Collectors.toList());
+    }
 
     public String convertPermissionToString(SharedUserPermission permission) {
         return Match(permission).of(

@@ -6,6 +6,7 @@ import com.haulmont.cuba.security.entity.EntityOp;
 import com.haulmont.cuba.security.entity.PermissionType;
 import com.haulmont.cuba.security.role.RoleDefinition;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.entity.SharedUserPermissionStorageItem;
 import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 
 import java.util.List;
@@ -18,10 +19,12 @@ import static ru.udya.sharedsession.permission.domain.SharedUserPermission.WILDC
 @Component("ss_SharedUserPermissionBuildHelper")
 public class SharedUserPermissionBuildHelper {
 
+    protected SharedUserPermissionStringRepresentationHelper sharedPermissionStringRepresentationHelper;
     protected CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper;
 
-    public SharedUserPermissionBuildHelper(
-            CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper) {
+    public SharedUserPermissionBuildHelper(SharedUserPermissionStringRepresentationHelper sharedPermissionStringRepresentationHelper,
+                                           CubaPermissionStringRepresentationHelper cubaPermissionStringRepresentationHelper) {
+        this.sharedPermissionStringRepresentationHelper = sharedPermissionStringRepresentationHelper;
         this.cubaPermissionStringRepresentationHelper = cubaPermissionStringRepresentationHelper;
     }
 
@@ -130,5 +133,11 @@ public class SharedUserPermissionBuildHelper {
                      .flatMap(Function.identity())
                      .map(p -> (SharedUserPermission) p)
                      .collect(Collectors.toList());
+    }
+
+    public SharedUserPermission buildPermissionBySharedUserPermissionStorageItem(SharedUserPermissionStorageItem storageItem) {
+
+        return sharedPermissionStringRepresentationHelper
+                .convertStringToPermission(storageItem.getPermission());
     }
 }
