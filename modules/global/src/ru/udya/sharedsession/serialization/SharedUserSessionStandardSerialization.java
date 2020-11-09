@@ -7,6 +7,7 @@ import com.haulmont.cuba.security.auth.SimpleAuthenticationDetails;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.remoting.support.RemoteInvocationResult;
 import ru.udya.sharedsession.domain.SharedUserSession;
+import ru.udya.sharedsession.domain.SharedUserSessionId;
 import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import java.io.InputStream;
@@ -24,9 +25,9 @@ public class SharedUserSessionStandardSerialization
         if (object instanceof RemoteInvocationResult) {
             Object value = ((RemoteInvocationResult) object).getValue();
 
-            if (value instanceof SharedUserSession) {
+            if (value instanceof SharedUserSessionId) {
                 Object sharedUserSessionHolder =
-                        createSharedUserSessionHolder((SharedUserSession<?>) value);
+                        createSharedUserSessionHolder((SharedUserSessionId<?>) value);
 
                 serializedObject = new RemoteInvocationResult(sharedUserSessionHolder);
             }
@@ -34,9 +35,9 @@ public class SharedUserSessionStandardSerialization
             if (value instanceof SimpleAuthenticationDetails) {
                 UserSession userSession = ((SimpleAuthenticationDetails) value).getSession();
 
-                if (userSession instanceof SharedUserSession) {
+                if (userSession instanceof SharedUserSessionId) {
                     SharedUserSessionHolder sharedUserSessionHolder =
-                            createSharedUserSessionHolder((SharedUserSession<?>) userSession);
+                            createSharedUserSessionHolder((SharedUserSessionId<?>) userSession);
 
                     serializedObject = new RemoteInvocationResult(
                             new SimpleAuthenticationDetails(sharedUserSessionHolder));
@@ -44,14 +45,14 @@ public class SharedUserSessionStandardSerialization
             }
         }
 
-        if (object instanceof SharedUserSession) {
-            serializedObject = createSharedUserSessionHolder((SharedUserSession<?>) object);
+        if (object instanceof SharedUserSessionId) {
+            serializedObject = createSharedUserSessionHolder((SharedUserSessionId<?>) object);
         }
 
         super.serialize(serializedObject, os);
     }
 
-    protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSession<?> sharedUserSession) {
+    protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSessionId<?> sharedUserSession) {
         Serializable sessionId = sharedUserSession.getSharedId();
 
         SharedUserSessionHolder userSessionHolder =
