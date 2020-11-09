@@ -27,7 +27,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
 //                                          AppBeans.get(CubaPermissionStringRepresentationHelper),
 //                                          AppBeans.get(CubaPermissionBuildHelper),
 //                                          AppBeans.get(RedisSharedUserSessionPermissionRuntime),
-//                                          AppBeans.get(RedisSharedUserPermissionRepository)])
+//                                          AppBeans.get(RedisSharedUserSessionPermissionRepository)])
     }
 
     def "check that creating shared user session works as well"() {
@@ -118,7 +118,7 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
 //                AppBeans.get(CubaPermissionStringRepresentationHelper),
 //                AppBeans.get(CubaPermissionBuildHelper),
 //                AppBeans.get(RedisSharedUserSessionPermissionRuntime),
-//                AppBeans.get(RedisSharedUserPermissionRepository))
+//                AppBeans.get(RedisSharedUserSessionPermissionRepository))
 //        overridedTestClass.init()
 //
 //        def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),

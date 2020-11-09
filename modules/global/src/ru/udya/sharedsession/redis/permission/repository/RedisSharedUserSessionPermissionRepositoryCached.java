@@ -15,7 +15,7 @@ import java.util.List;
 
 @Primary
 @Component(SharedUserSessionPermissionRepository.NAME)
-public class RedisSharedUserSessionPermissionRepositoryCached implements RedisSharedUserPermissionRepository{
+public class RedisSharedUserSessionPermissionRepositoryCached implements RedisSharedUserSessionPermissionRepository {
 
     protected RedisSharedUserSessionPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl;
 

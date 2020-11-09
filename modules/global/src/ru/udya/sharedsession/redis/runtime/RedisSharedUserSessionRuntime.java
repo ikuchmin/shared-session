@@ -5,16 +5,13 @@ import com.haulmont.cuba.core.global.ViewBuilder;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.entity.SharedUserPermissionStorageItem;
-import ru.udya.sharedsession.permission.domain.SharedUserPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionBuildHelper;
-import ru.udya.sharedsession.redis.cache.RedisSharedUserSessionCache;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
-import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository;
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserSessionPermissionRepository;
 import ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository;
 import ru.udya.sharedsession.repository.SharedUserPermissionStorageItemRepositoryService;
 import ru.udya.sharedsession.runtime.SharedUserSessionRuntime;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,13 +22,13 @@ public class RedisSharedUserSessionRuntime
     protected SharedUserPermissionBuildHelper sharedUserPermissionBuildHelper;
 
     protected RedisSharedUserSessionRepository sharedUserSessionRepository;
-    protected RedisSharedUserPermissionRepository sharedUserPermissionRepository;
+    protected RedisSharedUserSessionPermissionRepository sharedUserPermissionRepository;
 
     protected SharedUserPermissionStorageItemRepositoryService sharedUserPermissionStorageItemRepository;
 
     public RedisSharedUserSessionRuntime(SharedUserPermissionBuildHelper sharedUserPermissionBuildHelper,
                                          RedisSharedUserSessionRepository sharedUserSessionRepository,
-                                         RedisSharedUserPermissionRepository sharedUserPermissionRepository,
+                                         RedisSharedUserSessionPermissionRepository sharedUserPermissionRepository,
                                          SharedUserPermissionStorageItemRepositoryService sharedUserPermissionStorageItemRepository) {
         this.sharedUserPermissionBuildHelper = sharedUserPermissionBuildHelper;
         this.sharedUserSessionRepository = sharedUserSessionRepository;

@@ -13,7 +13,7 @@ import static ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepos
 
 class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSpecification {
 
-    RedisSharedUserPermissionRepository testClass
+    RedisSharedUserSessionPermissionRepository testClass
 
     RedisSharedUserSessionId sharedUserSessionId
 
@@ -23,7 +23,7 @@ class RedisSharedUserPermissionRepositoryTest extends SharedSessionIntegrationSp
 
         this.sharedUserSessionId = RedisSharedUserSessionId.of(sharedUserSessionId)
 
-        testClass = AppBeans.get(RedisSharedUserPermissionRepository)
+        testClass = AppBeans.get(RedisSharedUserSessionPermissionRepository)
     }
 
     def "check that add permissions to user works as well"() {

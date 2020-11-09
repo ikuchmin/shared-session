@@ -27,7 +27,7 @@ apply(plugin: 'cuba')
 cuba {
     artifact {
         group = 'ru.udya.sharedsession'
-        version = '0.5'
+        version = '0.6'
         isSnapshot = true
     }
 }

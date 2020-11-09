@@ -8,7 +8,7 @@ import com.haulmont.cuba.security.entity.User
 import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.permission.domain.SharedUserPermission
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId
-import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserPermissionRepository
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserSessionPermissionRepository
 
 import static ru.udya.sharedsession.permission.domain.SharedUserPermission.*
 import static ru.udya.sharedsession.redis.repository.RedisSharedUserSessionRepository.KEY_PATTERN
@@ -17,7 +17,7 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
 
     RedisSharedUserSessionPermissionRuntime testClass
 
-    RedisSharedUserPermissionRepository permissionRepository
+    RedisSharedUserSessionPermissionRepository permissionRepository
 
     RedisSharedUserSessionId sharedUserSession
 
@@ -27,7 +27,7 @@ class RedisSharedUserPermissionRuntimeTest extends SharedSessionIntegrationSpeci
 
         sharedUserSession = RedisSharedUserSessionId.of(sharedUserSessionId)
 
-        permissionRepository = AppBeans.get(RedisSharedUserPermissionRepository)
+        permissionRepository = AppBeans.get(RedisSharedUserSessionPermissionRepository)
 
         testClass = AppBeans.get(RedisSharedUserSessionPermissionRuntime)
     }

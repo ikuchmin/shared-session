@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Component(RedisSharedUserSessionPermissionRepositoryImpl.NAME)
-public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisSharedUserPermissionRepository {
+public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisSharedUserSessionPermissionRepository {
 
     public static final String NAME = "ss_RedisSharedUserSessionPermissionRepositoryImpl";
 
