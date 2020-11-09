@@ -110,9 +110,10 @@ public class RedisSharedUserSessionRuntimeAdapter
 
         private static final long serialVersionUID = 453371678445414846L;
 
-        protected UUID cubaSessionId;
+        // there are final because they should be filled in any cases of creation
+        protected final UUID cubaSessionId;
 
-        protected RedisSharedUserSessionId sharedUserSessionId;
+        protected final RedisSharedUserSessionId sharedUserSessionId;
 
         public RedisSharedUserSessionAdapter(
                 RedisSharedUserSessionId sharedUserSessionId) {
