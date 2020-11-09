@@ -121,8 +121,12 @@ public class RedisSharedUserSessionRuntimeAdapter
                     .extractCubaUserSessionIdFromSharedUserSessionId(sharedUserSessionId);
         }
 
-        public RedisSharedUserSessionAdapter(String sharedUserSessionId) {
-            this.sharedUserSessionId = RedisSharedUserSessionId.of(sharedUserSessionId);
+        public RedisSharedUserSessionAdapter(String sharedUserSessionIdStringRepresentation) {
+            var sharedUserSessionId = RedisSharedUserSessionId.of(sharedUserSessionIdStringRepresentation);
+
+            this.sharedUserSessionId = sharedUserSessionId;
+            this.cubaSessionId = redisSharedUserSessionIdTool
+                    .extractCubaUserSessionIdFromSharedUserSessionId(sharedUserSessionId);
         }
 
         @SuppressWarnings("UnusedReturnValue")
