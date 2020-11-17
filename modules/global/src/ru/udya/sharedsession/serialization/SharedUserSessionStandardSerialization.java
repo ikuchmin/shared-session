@@ -6,7 +6,6 @@ import com.haulmont.cuba.core.sys.serialization.StandardSerialization;
 import com.haulmont.cuba.security.auth.SimpleAuthenticationDetails;
 import com.haulmont.cuba.security.global.UserSession;
 import org.springframework.remoting.support.RemoteInvocationResult;
-import ru.udya.sharedsession.domain.SharedUserSession;
 import ru.udya.sharedsession.domain.SharedUserSessionId;
 import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
@@ -25,11 +24,9 @@ public class SharedUserSessionStandardSerialization
         if (object instanceof RemoteInvocationResult) {
             Object value = ((RemoteInvocationResult) object).getValue();
 
+            Object internalObject = value;
             if (value instanceof SharedUserSessionId) {
-                Object sharedUserSessionHolder =
-                        createSharedUserSessionHolder((SharedUserSessionId<?>) value);
-
-                serializedObject = new RemoteInvocationResult(sharedUserSessionHolder);
+                internalObject = createSharedUserSessionHolder((SharedUserSessionId<?>) value);
             }
 
             if (value instanceof SimpleAuthenticationDetails) {
@@ -39,9 +36,21 @@ public class SharedUserSessionStandardSerialization
                     SharedUserSessionHolder sharedUserSessionHolder =
                             createSharedUserSessionHolder((SharedUserSessionId<?>) userSession);
 
-                    serializedObject = new RemoteInvocationResult(
-                            new SimpleAuthenticationDetails(sharedUserSessionHolder));
+                    internalObject = new SimpleAuthenticationDetails(sharedUserSessionHolder);
                 }
+            }
+
+            serializedObject = new RemoteInvocationResult(internalObject);
+        }
+
+        if (object instanceof SimpleAuthenticationDetails) {
+            UserSession userSession = ((SimpleAuthenticationDetails) object).getSession();
+
+            if (userSession instanceof SharedUserSessionId) {
+                SharedUserSessionHolder sharedUserSessionHolder =
+                        createSharedUserSessionHolder((SharedUserSessionId<?>) userSession);
+
+                serializedObject = new SimpleAuthenticationDetails(sharedUserSessionHolder);
             }
         }
 
@@ -70,11 +79,9 @@ public class SharedUserSessionStandardSerialization
         if (desObject instanceof RemoteInvocationResult) {
             Object value = ((RemoteInvocationResult) desObject).getValue();
 
+            Object internalObject = value;
             if (value instanceof SharedUserSessionHolder) {
-                Object desSharedUserSession =
-                        fetchSharedUserSessionByHolder((SharedUserSessionHolder) value);
-
-                desObject = new RemoteInvocationResult(desSharedUserSession);
+                internalObject = fetchSharedUserSessionByHolder((SharedUserSessionHolder) value);
             }
 
             if (value instanceof SimpleAuthenticationDetails) {
@@ -84,8 +91,21 @@ public class SharedUserSessionStandardSerialization
                     UserSession desSharedUserSession =
                             fetchSharedUserSessionByHolder((SharedUserSessionHolder) userSession);
 
-                    desObject = new RemoteInvocationResult(new SimpleAuthenticationDetails(desSharedUserSession));
+                    internalObject = new SimpleAuthenticationDetails(desSharedUserSession);
                 }
+            }
+
+            desObject = new RemoteInvocationResult(internalObject);
+        }
+
+        if (desObject instanceof SimpleAuthenticationDetails) {
+            UserSession userSession = ((SimpleAuthenticationDetails) desObject).getSession();
+
+            if (userSession instanceof SharedUserSessionHolder) {
+                UserSession desSharedUserSession =
+                        fetchSharedUserSessionByHolder((SharedUserSessionHolder) userSession);
+
+                desObject = new SimpleAuthenticationDetails(desSharedUserSession);
             }
         }
 

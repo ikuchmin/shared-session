@@ -7,19 +7,25 @@ import com.haulmont.cuba.security.global.UserSession;
 import com.haulmont.cuba.security.group.AccessGroupDefinition;
 import com.haulmont.cuba.security.role.RoleDefinition;
 import com.haulmont.cuba.security.sys.UserSessionManager;
+import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
+@Component(SharedUserSessionManager.NAME)
 public class SharedUserSessionManager extends UserSessionManager {
 
-    @Inject
+    public static final String NAME = "ss_SharedUserSessionManager";
+
     protected SharedUserSessionRuntimeAdapter sharedUserSessionRepository;
+
+    public SharedUserSessionManager(SharedUserSessionRuntimeAdapter sharedUserSessionRepository) {
+        this.sharedUserSessionRepository = sharedUserSessionRepository;
+    }
 
     @Override
     @SuppressWarnings("ConstantConditions")
