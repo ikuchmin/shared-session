@@ -9,7 +9,6 @@ import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.security.entity.User;
 import org.springframework.stereotype.Component;
 import ru.udya.querydsl.cuba.core.CubaQueryFactory;
-import ru.udya.sharedsession.entity.QSharedUserPermissionStorageItem;
 import ru.udya.sharedsession.entity.SharedUserPermissionStorageItem;
 import ru.udya.sharedsession.helper.NativeQueryHelper;
 
@@ -52,12 +51,22 @@ public class SharedUserPermissionStorageItemRepositoryServiceBean
     @Override
     public List<SharedUserPermissionStorageItem> findAllByUserId(Id<User, UUID> userId, View view) {
 
-        var sharedPermissionStorageItem = QSharedUserPermissionStorageItem
-                .sharedUserPermissionStorageItem;
+        // do not rewrite on datamanager or querydsl cuba component
+        try (var tx = persistence.getTransaction()) {
+            var em = persistence.getEntityManager();
 
-        return cubaQueryFactory.selectFrom(sharedPermissionStorageItem)
-                               .where(sharedPermissionStorageItem.user.id.eq(userId.getValue()))
-                               .fetch(view);
+            var query = em.createQuery("select p\n" +
+                    "  from ss_SharedUserPermissionStorageItem p\n" +
+                    " where p.user.id = :user", SharedUserPermissionStorageItem.class)
+                    .setParameter("user", userId)
+                    .setView(view);
+
+            var loadedItems = query.getResultList();
+
+            tx.commit();
+
+            return loadedItems;
+        }
     }
 
     @Override
