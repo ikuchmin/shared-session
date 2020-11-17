@@ -1,0 +1,25 @@
+version: '3'
+services:
+  redis:
+    image: "redis:latest"
+    network_mode: "host"
+    ports:
+      - "6379:6379"
+    restart: on-failure
+    command: redis-server --appendonly yes
+    volumes:
+      - "redis:/data"
+  database:
+    image: "postgres:latest"
+    network_mode: "host"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=cuba
+      - POSTGRES_PASSWORD=cuba
+      - POSTGRES_DB=ss
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
+volumes:
+  redis:
+  dbdata:
