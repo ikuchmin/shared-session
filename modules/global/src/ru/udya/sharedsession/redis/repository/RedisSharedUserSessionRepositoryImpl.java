@@ -178,12 +178,18 @@ public class RedisSharedUserSessionRepositoryImpl
         try {
 
             asyncReadConnection.async()
-                               .set(redisKey, sharedUserSession.getCubaUserSession());
+                               .set(redisKey, sharedUserSession.getCubaUserSession())
+                               .get();
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
             throw new SharedSessionException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during saving shared user session", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during saving shared user session", e);
         }
     }
 
