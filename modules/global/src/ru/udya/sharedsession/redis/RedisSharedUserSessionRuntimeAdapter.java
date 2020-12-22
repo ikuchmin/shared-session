@@ -160,6 +160,11 @@ public class RedisSharedUserSessionRuntimeAdapter
 
         @Override
         public boolean isScreenPermitted(String windowAlias) {
+            // https://www.cuba-platform.ru/discuss/t/windowalias-raven-null-pri-vyzove-isscreenpermitted-string-windowalias-clientusersession/5252/2
+            if (windowAlias == null) {
+                return true; // check on simple CUBA App
+            }
+
             var permission = sharedPermissionBuildHelper
                     .buildPermissionByWindowAlias(windowAlias);
 
