@@ -193,6 +193,11 @@ public class RedisSharedUserSessionRuntimeAdapter
 
         @Override
         public boolean isSpecificPermitted(String name) {
+            // https://www.cuba-platform.ru/discuss/t/windowalias-raven-null-pri-vyzove-isscreenpermitted-string-windowalias-clientusersession/5252/2
+            if (name == null) {
+                return true; // check on simple CUBA App
+            }
+
             var permission = sharedPermissionBuildHelper
                     .buildPermissionBySpecificPermission(name);
 
