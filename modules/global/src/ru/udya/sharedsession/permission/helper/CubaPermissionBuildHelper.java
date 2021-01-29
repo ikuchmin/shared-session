@@ -12,6 +12,10 @@ public class CubaPermissionBuildHelper {
 
     protected CubaPermissionStringRepresentationHelper stringRepresentationHelper;
 
+    public CubaPermissionBuildHelper(CubaPermissionStringRepresentationHelper stringRepresentationHelper) {
+        this.stringRepresentationHelper = stringRepresentationHelper;
+    }
+
     public RoleDefinition buildRoleDefinitionBySharedUserPermissions(List<SharedUserPermission> sharedUserPermissions) {
         var roleDefinitionBuilder = BasicRoleDefinition.builder();
 
