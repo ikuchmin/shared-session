@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans">
+
+    <import resource="classpath:com/haulmont/cuba/testsupport/test-spring.xml"/>
+
+    <!-- TODO: this bean should be also defined as primary in core Spring configuration, but this change requires addon users to refactor their projects for proper injection -->
+    <bean id="cuba_UserSessionManager"
+          class="ru.udya.sharedsession.sys.SharedUserSessionManager"
+          primary="true"/>
+
+</beans>

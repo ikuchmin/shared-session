@@ -1,12 +1,8 @@
 package ru.udya.sharedsession;
 
-import com.haulmont.bali.util.Dom4j;
 import com.haulmont.cuba.testsupport.TestContainer;
-import org.dom4j.Document;
-import org.dom4j.Element;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -14,6 +10,7 @@ public class SharedsessionTestContainer extends TestContainer {
 
     public SharedsessionTestContainer() {
         super();
+        springConfig = "ru/udya/sharedsession/test-spring.xml";
         appComponents = new ArrayList<>(Arrays.asList(
                 "com.haulmont.cuba"
                 // add CUBA premium add-ons here
