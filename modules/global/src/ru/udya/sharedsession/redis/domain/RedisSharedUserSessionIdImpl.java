@@ -15,17 +15,17 @@ public class RedisSharedUserSessionIdImpl implements RedisSharedUserSessionId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
+        if (this == o) return true;
+        if (! (o instanceof RedisSharedUserSessionId)) return false;
 
-        RedisSharedUserSessionIdImpl that = (RedisSharedUserSessionIdImpl) o;
+        RedisSharedUserSessionId that = (RedisSharedUserSessionId) o;
 
-        return sharedId.equals(that.sharedId);
+        return getSharedId().equals(that.getSharedId());
     }
 
     @Override
     public int hashCode() {
-        return sharedId.hashCode();
+        return getSharedId().hashCode();
     }
 
     @Override

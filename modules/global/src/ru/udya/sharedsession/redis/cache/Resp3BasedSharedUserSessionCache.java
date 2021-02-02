@@ -33,7 +33,7 @@ public class Resp3BasedSharedUserSessionCache implements RedisSharedUserSessionC
     protected RedisClient redisClient;
     protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
 
-    protected Map<RedisSharedUserSessionId, RedisSharedUserSession> cache = new ConcurrentHashMap<>(3000);
+    protected Map<RedisSharedUserSessionId, RedisSharedUserSession> cache = new ConcurrentHashMap<>(10000);
     protected StatefulRedisPubSubConnection<String, String> invalidateConnection;
 
     public Resp3BasedSharedUserSessionCache(RedisClient redisClient,
@@ -62,12 +62,11 @@ public class Resp3BasedSharedUserSessionCache implements RedisSharedUserSessionC
 
                 log.info("Invalidate keys: {}", keysToInvalidate);
 
-                keysToInvalidate
-                        .stream()
-                        .filter(k -> k.contains(RedisSharedUserSessionRepository.COMMON_SUFFIX))
-                        .map(redisSharedUserSessionIdTool::subtractCommonSuffix)
-                        .map(RedisSharedUserSessionId::of)
-                        .forEach(cache::remove);
+                keysToInvalidate.stream()
+                                .filter(k -> k.contains(RedisSharedUserSessionRepository.COMMON_SUFFIX))
+                                .map(redisSharedUserSessionIdTool::subtractCommonSuffix)
+                                .map(RedisSharedUserSessionId::of)
+                                .forEach(cache::remove);
             }
         });
 
@@ -107,7 +106,7 @@ public class Resp3BasedSharedUserSessionCache implements RedisSharedUserSessionC
             RedisSharedUserSessionId sessionId,
             Function<RedisSharedUserSessionId, RedisSharedUserSession> getBySessionKeyId) {
 
-       return cache.computeIfAbsent(sessionId, getBySessionKeyId);
+       return cache.computeIfAbsent(sessionId, k -> getBySessionKeyId.apply(k));
     }
 
     @Override

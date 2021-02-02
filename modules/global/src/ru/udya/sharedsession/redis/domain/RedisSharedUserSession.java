@@ -48,25 +48,25 @@ public class RedisSharedUserSession
         this.userSession = userSession;
     }
 
-    @Override
     public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
+        if (this == o) return true;
+        if (! (o instanceof RedisSharedUserSessionId)) return false;
 
-        RedisSharedUserSession that = (RedisSharedUserSession) o;
+        RedisSharedUserSessionId that = (RedisSharedUserSessionId) o;
 
-        return sharedId.equals(that.sharedId);
+        return getSharedId().equals(that.getSharedId());
     }
 
     @Override
     public int hashCode() {
-        return sharedId.hashCode();
+        return getSharedId().hashCode();
     }
 
     @Override
     public String toString() {
-        return "RedisSharedUserSessionAdapter{" +
-               "sharedId='" + sharedId + '\'' +
-               '}';
+        return "RedisSharedUserSession{" +
+                "sharedId='" + sharedId + '\'' +
+                ", userSession=" + userSession +
+                '}';
     }
 }

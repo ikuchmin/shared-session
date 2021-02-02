@@ -8,7 +8,7 @@ import ru.udya.sharedsession.SharedSessionIntegrationSpecification
 import ru.udya.sharedsession.cache.SharedUserSessionCache
 import spock.lang.Ignore
 
-class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpecification {
+class RedisSharedUserSessionRuntimeAdapterTest extends SharedSessionIntegrationSpecification {
     
     RedisSharedUserSessionRuntimeAdapter testClass
 
@@ -21,13 +21,6 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
         sharedUserSessionCache = AppBeans.get(SharedUserSessionCache)
 
         testClass = AppBeans.get(RedisSharedUserSessionRuntimeAdapter)
-//        testClass = Spy(RedisSharedUserSessionRuntimeAdapter,
-//                        constructorArgs: [AppBeans.get(RedisClient), sharedUserSessionCache,
-//                                          AppBeans.get(SharedUserPermissionBuildHelper),
-//                                          AppBeans.get(CubaPermissionStringRepresentationHelper),
-//                                          AppBeans.get(CubaPermissionBuildHelper),
-//                                          AppBeans.get(RedisSharedUserSessionPermissionRuntime),
-//                                          AppBeans.get(RedisSharedUserSessionPermissionRepository)])
     }
 
     def "check that creating shared user session works as well"() {
@@ -60,30 +53,6 @@ class RedisSharedUserSessionRepositoryTest extends SharedSessionIntegrationSpeci
 
         then:
         redisSharedSession.getLocale() == us.locale
-    }
-
-    @Ignore
-    def "check that reading values from shared user session doesn't produce query to Redis every time"() {
-        given:
-        def us = new UserSession(UuidProvider.createUuid(), uss.getUserSession().getUser(),
-                [], uss.getUserSession().getLocale(), false) // doesn't use default test user session because it has some hacks
-
-        def sharedUserSession = testClass.createSession(us)
-
-        and: 'remove object from cache'
-        sharedUserSessionCache.removeFromCache(sharedUserSession.sharedId)
-
-        when:
-        def redisSharedSession = testClass.findByCubaUserSessionId(sharedUserSession.sharedId)
-
-        and: 'put session to the cache'
-        redisSharedSession.getLocale()
-
-        then:
-        redisSharedSession.getLocale() == us.locale
-        redisSharedSession.getUser() == us.user
-
-        1 * testClass.findBySessionKeyNoCache(_)
     }
 
     @Ignore

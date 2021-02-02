@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
-// todo rename to Runtime and create real Repository
 @Component(SharedUserSessionRuntimeAdapter.NAME)
 public class RedisSharedUserSessionRuntimeAdapter
         implements SharedUserSessionRuntimeAdapter {

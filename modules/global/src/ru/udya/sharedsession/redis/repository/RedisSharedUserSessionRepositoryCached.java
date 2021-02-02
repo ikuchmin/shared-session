@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import ru.udya.sharedsession.redis.cache.RedisSharedUserSessionCache;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
@@ -26,25 +27,27 @@ public class RedisSharedUserSessionRepositoryCached
     protected static final Logger log = LoggerFactory.getLogger(RedisSharedUserSessionRepositoryCached.class);
     protected Map<UUID, RedisSharedUserSessionId> cubaSessionIdOnSharedUserSessionIdCache = new ConcurrentHashMap<>(3000);
 
+    protected RedisSharedUserSessionCache redisSharedUserSessionCache;
     protected RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl;
 
-    public RedisSharedUserSessionRepositoryCached(
-            RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl) {
+    public RedisSharedUserSessionRepositoryCached(RedisSharedUserSessionCache redisSharedUserSessionCache,
+                                                  RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl) {
 
+        this.redisSharedUserSessionCache = redisSharedUserSessionCache;
         this.redisSharedUserSessionRepositoryImpl = redisSharedUserSessionRepositoryImpl;
     }
 
     @Override
     public RedisSharedUserSession findById(RedisSharedUserSessionId sharedId) {
-        return redisSharedUserSessionRepositoryImpl.findById(sharedId);
+        return redisSharedUserSessionCache.getFromCacheBySharedId(sharedId,
+                logSessionCacheMiss(redisSharedUserSessionRepositoryImpl::findById));
     }
 
     @Override
     public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
         logSessionIdCacheMiss(redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId);
-        return cubaSessionIdOnSharedUserSessionIdCache
-                .computeIfAbsent(cubaUserSessionId,
-                                 logSessionIdCacheMiss(redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId));
+        return cubaSessionIdOnSharedUserSessionIdCache.computeIfAbsent(cubaUserSessionId,
+                logSessionIdCacheMiss(redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId));
     }
 
     @Override
@@ -68,9 +71,17 @@ public class RedisSharedUserSessionRepositoryCached
         return redisSharedUserSessionRepositoryImpl.updateByFn(redisSharedUserSessionId, updateFn);
     }
 
-    public <K, V> Function<? super K, ? extends V> logSessionIdCacheMiss(Function<? super K, ? extends V> originFunction) {
+    public <K, V> Function<K, V> logSessionIdCacheMiss(Function<K, V> originFunction) {
         return k -> {
-            log.warn("SessionId isn't in the session cache. SessionId: {}", k);
+            log.warn("CUBA Session id isn't in the session cache. CUBA SessionId: {}", k);
+
+            return originFunction.apply(k);
+        };
+    }
+
+    public <K, V> Function<K, V> logSessionCacheMiss(Function<K, V> originFunction) {
+        return k -> {
+            log.warn("Session isn't in the session cache. Shared SessionId: {}", k);
 
             return originFunction.apply(k);
         };
