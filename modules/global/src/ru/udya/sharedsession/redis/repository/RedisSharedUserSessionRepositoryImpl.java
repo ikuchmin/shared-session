@@ -9,6 +9,7 @@ import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.exception.SharedSessionException;
@@ -44,6 +45,7 @@ public class RedisSharedUserSessionRepositoryImpl
     protected RedisSharedUserSessionIdTool redisRepositoryTool;
 
     protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
+    protected RedisAsyncCommands<String, UserSession> asyncReadCommands;
 
     public RedisSharedUserSessionRepositoryImpl(RedisClient redisClient,
                                                 RedisUserSessionCodec redisUserSessionCodec,
@@ -57,6 +59,7 @@ public class RedisSharedUserSessionRepositoryImpl
     @SuppressWarnings("unused")
     public void init() {
         this.asyncReadConnection = redisClient.connect(redisUserSessionCodec);
+        this.asyncReadCommands = redisClient.connect(redisUserSessionCodec).async();
     }
 
 
@@ -72,9 +75,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
             var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSessionId);
 
-            var userSession = asyncReadConnection.async()
-                                                 .get(redisKey)
-                                                 .get();
+            var userSession = asyncReadCommands.get(redisKey).get();
 
             return RedisSharedUserSession.of(sharedUserSessionId, userSession);
 
@@ -105,9 +106,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
             while (foundKeys.isEmpty() && ! cursor.isFinished()) {
 
-                cursor = asyncReadConnection.async()
-                                            .scan(cursor, matcher)
-                                            .get();
+                cursor = asyncReadCommands.scan(cursor, matcher).get();
 
                 foundKeys = cursor.getKeys();
             };
@@ -139,9 +138,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
             var matcher = KEY_PREFIX + ":" + userId.getValue() + ":*:" + COMMON_SUFFIX;
 
-            var foundKeys = asyncReadConnection.async()
-                                               .keys(matcher)
-                                               .get();
+            var foundKeys = asyncReadCommands.keys(matcher).get();
 
             return foundKeys.stream()
                             .map(redisRepositoryTool::subtractCommonSuffix)
@@ -177,9 +174,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
         try {
 
-            asyncReadConnection.async()
-                               .set(redisKey, sharedUserSession.getCubaUserSession())
-                               .get();
+            asyncReadCommands.set(redisKey, sharedUserSession.getCubaUserSession()).get();
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
