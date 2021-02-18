@@ -25,11 +25,7 @@ import ru.udya.sharedsession.repository.SharedUserSessionRuntimeAdapter;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -95,7 +91,9 @@ public class RedisSharedUserSessionRuntimeAdapter
         var sharedId = sharedUserSessionRepository
                 .findIdByCubaUserSessionId(id);
 
-        return new RedisSharedUserSessionAdapter(sharedId);
+        return Optional.ofNullable(sharedId)
+                .map(RedisSharedUserSessionAdapter::new)
+                .orElse(null);
     }
 
     @Override
