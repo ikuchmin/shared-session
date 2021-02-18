@@ -20,9 +20,21 @@ public class SharedUserSessionStandardSerialization
     @Override
     public void serialize(Object object, OutputStream os) {
 
+        Object serializedObject = preProcessSerializedObject(object);
+
+        super.serialize(serializedObject, os);
+    }
+
+    protected Object preProcessSerializedObject(Object object) {
         Object serializedObject = object;
         if (object instanceof RemoteInvocationResult) {
-            Object value = ((RemoteInvocationResult) object).getValue();
+            RemoteInvocationResult remoteInvocationResult = ((RemoteInvocationResult) object);
+            Object value = remoteInvocationResult.getValue();
+            Throwable exception = remoteInvocationResult.getException();
+
+            if (exception != null) {
+                return serializedObject;
+            }
 
             Object internalObject = value;
             if (value instanceof SharedUserSessionId) {
@@ -57,8 +69,7 @@ public class SharedUserSessionStandardSerialization
         if (object instanceof SharedUserSessionId) {
             serializedObject = createSharedUserSessionHolder((SharedUserSessionId<?>) object);
         }
-
-        super.serialize(serializedObject, os);
+        return serializedObject;
     }
 
     protected SharedUserSessionHolder createSharedUserSessionHolder(SharedUserSessionId<?> sharedUserSession) {
@@ -76,8 +87,20 @@ public class SharedUserSessionStandardSerialization
     public Object deserialize(InputStream is) {
         Object desObject = super.deserialize(is);
 
+        desObject = postProcessDeserializedObject(desObject);
+
+        return desObject;
+    }
+
+    private Object postProcessDeserializedObject(Object desObject) {
         if (desObject instanceof RemoteInvocationResult) {
-            Object value = ((RemoteInvocationResult) desObject).getValue();
+            RemoteInvocationResult remoteInvocationResult = ((RemoteInvocationResult) desObject);
+            Object value = remoteInvocationResult.getValue();
+            Throwable exception = remoteInvocationResult.getException();
+
+            if (exception != null) {
+                return desObject;
+            }
 
             Object internalObject = value;
             if (value instanceof SharedUserSessionHolder) {
