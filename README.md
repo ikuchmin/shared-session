@@ -15,7 +15,7 @@ It helps you:
 ```
 
 
-## Add to a project
+## Installation
 
 1. Build component. Component isn't published to the maven repository. Because you must build it by yourself
 
