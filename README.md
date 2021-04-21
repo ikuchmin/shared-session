@@ -25,14 +25,31 @@ It helps you:
     - `ss.redis.host`
     - `ss.redis.port`
     
-4. Overview overridden CUBA components. It is important to do not get bean conflicts 
-    
+4. Declare overridden CUBA components as primary in spring.xml configurations 
+   
+   **Core** *spring.xml:*
+   ```xml
+   <beans>
+      <bean id="cuba_UserSessionManager" class="ru.udya.sharedsession.sys.SharedUserSessionManager" primary="true"/>
+      <bean id="cuba_UserSessions" class="ru.udya.sharedsession.security.RedisUserSessions" primary="true"/>
+   </beans>
+   ```
+
+   **Web** *web-spring.xml:*   
+   ```xml
+   <bean>
+       <bean id="cuba_Connection"
+          class="ru.udya.sharedsession.client.SharedSessionConnectionImpl"
+          scope="vaadin" primary="true"/>
+   </bean>
+   ```
+
 ## Overridden components
 
 ### Core
 
 - cuba_UserSessionManager -> ru.udya.sharedsession.sys.SharedUserSessionManager
-- cuba_UserSessions -> ru.udya.sharedsession.security.RedisUserSessions 
+- cuba_UserSessions -> ru.udya.sharedsession.security.RedisUserSessions
 
 ### Web
 
