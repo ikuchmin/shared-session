@@ -3,7 +3,6 @@ package ru.udya.sharedsession;
 import com.haulmont.cuba.testsupport.TestContainer;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class SharedsessionTestContainer extends TestContainer {
@@ -11,15 +10,10 @@ public class SharedsessionTestContainer extends TestContainer {
     public SharedsessionTestContainer() {
         super();
         springConfig = "ru/udya/sharedsession/test-spring.xml";
-        appComponents = new ArrayList<>(Arrays.asList(
-                "com.haulmont.cuba"
-                // add CUBA premium add-ons here
-                // "com.haulmont.bpm",
-                // "com.haulmont.charts",
-                // "com.haulmont.fts",
-                // "com.haulmont.reports",
-                // and custom app components if any
-        ));
+        appComponents = Arrays.asList(
+                "com.haulmont.cuba",
+                "ru.udya.querydsl.cuba",
+                "com.haulmont.addon.restapi");
         appPropertiesFiles = Arrays.asList(
                 // List the files defined in your web.xml
                 // in appPropertiesConfig context parameter of the core module
