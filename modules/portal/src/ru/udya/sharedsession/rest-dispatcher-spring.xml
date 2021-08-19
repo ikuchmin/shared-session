@@ -1,0 +1,25 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+>
+
+    <context:component-scan base-package="ru.udya.sharedsession.rest"/>
+
+    <bean id="tokenStore" class="org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore">
+<!--        <property name="authenticationKeyGenerator">-->
+<!--            <bean class="com.haulmont.addon.restapi.api.auth.UniqueAuthenticationKeyGenerator"/>-->
+<!--        </property>-->
+    </bean>
+
+    <!--    <security:http pattern="/**"-->
+<!--                   create-session="stateless"-->
+<!--                   entry-point-ref="oauthAuthenticationEntryPoint"-->
+<!--                   xmlns="http://www.springframework.org/schema/security">-->
+
+<!--        <intercept-url pattern="/**" access="isAuthenticated()"/>-->
+<!--        <anonymous enabled="false"/>-->
+<!--        <csrf disabled="true"/>-->
+<!--        <cors configuration-source-ref="cuba_RestCorsSource"/>-->
+
+<!--        <custom-filter ref="resourceFilter" before="PRE_AUTH_FILTER"/>-->
+<!--    </security:http>-->
+</beans>

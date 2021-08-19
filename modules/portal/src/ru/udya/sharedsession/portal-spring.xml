@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:task="http://www.springframework.org/schema/task">
+>
 
-    <context:component-scan base-package="ru.udya.sharedsession"/>
+    <context:component-scan base-package="ru.udya.sharedsession">
+        <context:exclude-filter type="regex" expression="ru\.udya\.sharedsession\.rest\..*"/>
+    </context:component-scan>
+
     <bean id="sharedsession_proxyCreator" class="com.haulmont.cuba.portal.sys.remoting.PortalRemoteProxyBeanCreator">
         <property name="serverSelector" ref="cuba_ServerSelector"/>
         <property name="remoteServices">
