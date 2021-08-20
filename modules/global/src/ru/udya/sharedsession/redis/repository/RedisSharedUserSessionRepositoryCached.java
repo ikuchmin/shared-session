@@ -45,7 +45,6 @@ public class RedisSharedUserSessionRepositoryCached
 
     @Override
     public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
-        logSessionIdCacheMiss(redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId);
         return cubaSessionIdOnSharedUserSessionIdCache.computeIfAbsent(cubaUserSessionId,
                 logSessionIdCacheMiss(redisSharedUserSessionRepositoryImpl::findIdByCubaUserSessionId));
     }
@@ -57,7 +56,11 @@ public class RedisSharedUserSessionRepositoryCached
 
     @Override
     public RedisSharedUserSession createByCubaUserSession(UserSession cubaUserSession) {
-        return redisSharedUserSessionRepositoryImpl.createByCubaUserSession(cubaUserSession);
+        var sharedUserSession = redisSharedUserSessionRepositoryImpl.createByCubaUserSession(cubaUserSession);
+
+        cubaSessionIdOnSharedUserSessionIdCache.put(cubaUserSession.getId(), sharedUserSession);
+
+        return sharedUserSession;
     }
 
     @Override
