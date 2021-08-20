@@ -54,3 +54,23 @@ It helps you:
 ### Web
 
 cuba_Connection -> ru.udya.sharedsession.client.SharedSessionConnectionImpl
+
+## Documentation
+
+### Redis
+
+#### How we find shared session by CUBA.platform session Id
+
+If you go deep to CUBA Remote Invocation implementation you will find that
+CubaRemoteInvocation contains sessionId as UUID. It restricts us to use SharedSessionId
+there because SharedSessionId is a String (Redis implementation widely use it).
+
+As you can see RedisSharedUserSessionRepositoryImpl contains findIdByCubaUserSessionId.
+The method uses key scan in Redis and because it has complexity O(N) (too slow). It is one
+of the reason wrapping RedisSharedUserSessionRepositoryImpl by RedisSharedUserSessionRepositoryCached.
+
+Let see how findIdByCubaUserSessionId works in the Cached version:
+
+1. Finds cuba session id in local cache
+2. Finds cuba session id in shared redis cache
+3. Use implementation in RedisSharedUserSessionRepositoryImpl
