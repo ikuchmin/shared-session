@@ -33,7 +33,7 @@ class RedisSharedUserSessionRepositoryCachedTest extends SharedSessionIntegratio
 
         redisSharedUserSessionCache = AppBeans.get(RedisSharedUserSessionCache)
 
-        testClass = new RedisSharedUserSessionRepositoryCached(redisSharedUserSessionCache, redisSharedUserSessionRepositoryImpl)
+        testClass = new RedisSharedUserSessionRepositoryCached(redisSharedUserSessionCache, redisSharedUserSessionRepositoryImpl, redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository)
     }
 
     def "check that findById doesn't produce query to Redis every time"() {
