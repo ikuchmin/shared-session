@@ -30,7 +30,7 @@ apply(plugin: 'cuba')
 cuba {
     artifact {
         group = 'ru.udya.sharedsession'
-        version = '0.18.1'
+        version = '0.18.2'
         isSnapshot = true
     }
 }
@@ -74,7 +74,7 @@ configure([globalModule, coreModule, webModule, portalModule]) {
     }
 
     dependencies {
-        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.0.1.RELEASE'
+        compile group: 'io.lettuce', name: 'lettuce-core', version: '6.1.4.RELEASE'
         compile group: 'io.vavr', name: 'vavr', version: '0.10.3'
 
         testCompile('junit:junit:4.12')
