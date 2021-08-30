@@ -8,10 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.redis.cache.RedisSharedUserSessionCache;
+import ru.udya.sharedsession.redis.cache.Resp3BasedSharedUserSessionCache;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 import ru.udya.sharedsession.repository.SharedUserSessionRepository;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,16 +30,26 @@ public class RedisSharedUserSessionRepositoryCached
     protected static final Logger log = LoggerFactory.getLogger(RedisSharedUserSessionRepositoryCached.class);
     protected Map<UUID, RedisSharedUserSessionId> cubaSessionIdOnSharedUserSessionIdCache = new ConcurrentHashMap<>(3000);
 
-    protected RedisSharedUserSessionCache redisSharedUserSessionCache;
+    protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
     protected RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl;
     protected RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository;
 
-    public RedisSharedUserSessionRepositoryCached(RedisSharedUserSessionCache redisSharedUserSessionCache,
-                                                  RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl, RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository) {
+    protected RedisSharedUserSessionCache redisSharedUserSessionCache;
 
-        this.redisSharedUserSessionCache = redisSharedUserSessionCache;
+    public RedisSharedUserSessionRepositoryCached(RedisSharedUserSessionIdTool redisSharedUserSessionIdTool,
+                                                  RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl,
+                                                  RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository) {
+        this.redisSharedUserSessionIdTool = redisSharedUserSessionIdTool;
+
         this.redisSharedUserSessionRepositoryImpl = redisSharedUserSessionRepositoryImpl;
         this.redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository = redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        this.redisSharedUserSessionCache = new Resp3BasedSharedUserSessionCache(
+                redisSharedUserSessionRepositoryImpl.getRedisConnection(), redisSharedUserSessionIdTool);
+
     }
 
     @Override
