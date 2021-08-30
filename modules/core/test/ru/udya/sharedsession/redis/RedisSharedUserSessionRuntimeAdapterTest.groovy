@@ -14,11 +14,8 @@ class RedisSharedUserSessionRuntimeAdapterTest extends SharedSessionIntegrationS
 
     UserSessionSource uss
 
-    SharedUserSessionCache sharedUserSessionCache
-
     void setup() {
         uss = AppBeans.get(UserSessionSource)
-        sharedUserSessionCache = AppBeans.get(SharedUserSessionCache)
 
         testClass = AppBeans.get(RedisSharedUserSessionRuntimeAdapter)
     }

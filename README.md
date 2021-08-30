@@ -74,3 +74,16 @@ Let see how findIdByCubaUserSessionId works in the Cached version:
 1. Finds cuba session id in local cache
 2. Finds cuba session id in shared redis cache
 3. Use implementation in RedisSharedUserSessionRepositoryImpl
+
+
+#### RedisSharedTokenStore
+The table shows how keys and values formed and store in the redis. A key consists of a key prefix and a key value
+
+| Key. Prefix       | Key. Value                  | Value                       | Calling method                    |
+| ----------------- | --------------------------- | --------------------------- | --------------------------------- |
+| ACCESS            | OAuth2AccessToken#getValue  | OAuth2AccessToken           | readAccessToken                   |
+| AUTH              | OAuth2AccessToken#getValue  | OAuth2Authentication        | readAuthentication                |
+| REFRESH_AUTH      | OAuth2RefreshToken#getValue | OAuth2Authentication        | readAuthenticationForRefreshToken |
+| REFRESH           | OAuth2RefreshToken#getValue | OAuth2RefreshToken          | readRefreshToken                  |
+| ACCESS_TO_REFRESH | OAuth2AccessToken#getValue  | OAuth2RefreshToken#getValue |                                   |            
+| REFRESH_TO_ACCESS | OAuth2RefreshToken#getValue | OAuth2AccessToken#getValue  |                                   |
