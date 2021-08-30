@@ -44,8 +44,8 @@ public class RedisSharedUserSessionRepositoryImpl
     protected RedisUserSessionCodec redisUserSessionCodec;
     protected RedisSharedUserSessionIdTool redisRepositoryTool;
 
-    protected StatefulRedisConnection<String, UserSession> asyncReadConnection;
-    protected RedisAsyncCommands<String, UserSession> asyncReadCommands;
+    protected StatefulRedisConnection<String, UserSession> redisConnection;
+    protected RedisAsyncCommands<String, UserSession> asyncRedisCommands;
 
     public RedisSharedUserSessionRepositoryImpl(RedisClient redisClient,
                                                 RedisUserSessionCodec redisUserSessionCodec,
@@ -58,14 +58,17 @@ public class RedisSharedUserSessionRepositoryImpl
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        this.asyncReadConnection = redisClient.connect(redisUserSessionCodec);
-        this.asyncReadCommands = redisClient.connect(redisUserSessionCodec).async();
+        this.redisConnection = redisClient.connect(redisUserSessionCodec);
+        this.asyncRedisCommands = redisConnection.async();
     }
 
+    public StatefulRedisConnection<String, UserSession> getRedisConnection() {
+        return redisConnection;
+    }
 
     @PreDestroy
     public void close() {
-        asyncReadConnection.close();
+        redisConnection.close();
     }
 
     @Override
@@ -75,7 +78,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
             var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSessionId);
 
-            var userSession = asyncReadCommands.get(redisKey).get();
+            var userSession = asyncRedisCommands.get(redisKey).get();
 
             return RedisSharedUserSession.of(sharedUserSessionId, userSession);
 
@@ -99,17 +102,16 @@ public class RedisSharedUserSessionRepositoryImpl
             var matcher = matches(KEY_PREFIX + ":*:" + cubaUserSessionId + ":" + COMMON_SUFFIX);
 
 
-            KeyScanCursor<String> cursor = asyncReadConnection.async()
-                                                              .scan(matcher)
-                                                              .get();
+            KeyScanCursor<String> cursor = asyncRedisCommands.scan(matcher).get();
+
             List<String> foundKeys = cursor.getKeys();
 
             while (foundKeys.isEmpty() && ! cursor.isFinished()) {
 
-                cursor = asyncReadCommands.scan(cursor, matcher).get();
+                cursor = asyncRedisCommands.scan(cursor, matcher).get();
 
                 foundKeys = cursor.getKeys();
-            };
+            }
 
             if (foundKeys.isEmpty()) {
                 return null;
@@ -138,7 +140,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
             var matcher = KEY_PREFIX + ":" + userId.getValue() + ":*:" + COMMON_SUFFIX;
 
-            var foundKeys = asyncReadCommands.keys(matcher).get();
+            var foundKeys = asyncRedisCommands.keys(matcher).get();
 
             return foundKeys.stream()
                             .map(redisRepositoryTool::subtractCommonSuffix)
@@ -174,7 +176,7 @@ public class RedisSharedUserSessionRepositoryImpl
 
         try {
 
-            asyncReadCommands.set(redisKey, sharedUserSession.getCubaUserSession()).get();
+            asyncRedisCommands.set(redisKey, sharedUserSession.getCubaUserSession()).get();
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
