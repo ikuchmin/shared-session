@@ -32,13 +32,13 @@ public class RedisSharedUserSessionRepositoryCached
 
     protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
     protected RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl;
-    protected RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository;
+    protected RedisSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository;
 
     protected RedisSharedUserSessionCache redisSharedUserSessionCache;
 
     public RedisSharedUserSessionRepositoryCached(RedisSharedUserSessionIdTool redisSharedUserSessionIdTool,
                                                   RedisSharedUserSessionRepositoryImpl redisSharedUserSessionRepositoryImpl,
-                                                  RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository) {
+                                                  RedisSessionIdMappingRepository redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository) {
         this.redisSharedUserSessionIdTool = redisSharedUserSessionIdTool;
 
         this.redisSharedUserSessionRepositoryImpl = redisSharedUserSessionRepositoryImpl;
@@ -62,23 +62,38 @@ public class RedisSharedUserSessionRepositoryCached
     public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
 
         // composite fast and slow version of finding sharedSession
-        Function<UUID, RedisSharedUserSessionId> findIdByCubaUserSessionId = (UUID cubaId) -> {
+        Function<UUID, RedisSharedUserSessionId> cachedFindIdByCubaUserSessionId = (UUID cubaId) -> {
             var sharedUserSessionId = redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository
-                    .findRedisSharedUserSessionIdByCubaUserSessionId(cubaId);
+                    .findSharedIdByCubaSessionId(cubaId);
 
             if (sharedUserSessionId != null) {
-                log.info("Found in redis mapping {}", cubaUserSessionId);
-                return sharedUserSessionId;
+
+                // check that mapping in redis isn't corrupted
+                if (sharedUserSessionId.getSharedId().endsWith(cubaId.toString())) {
+
+                    log.info("Redis cache hit for CUBA session ID ({}) -> {}",
+                            cubaUserSessionId, sharedUserSessionId.getSharedId());
+
+                    return sharedUserSessionId;
+                }
+
+                log.warn("Cache miss for cubaId on sharedId mapping. SharedId ({}) isn't consist with cubaId ({})",
+                        sharedUserSessionId.getSharedId(), cubaId);
             }
 
-            log.info("Go slow fallback {}", cubaUserSessionId);
+            log.info("Go slow fallback for {}", cubaUserSessionId);
 
             // slow fallback
             return  redisSharedUserSessionRepositoryImpl.findIdByCubaUserSessionId(cubaId);
         };
 
-        return cubaSessionIdOnSharedUserSessionIdCache.computeIfAbsent(cubaUserSessionId,
-                logSessionIdCacheMiss(findIdByCubaUserSessionId));
+        // todo avoid local cache during the moment when we guarantee that sessionId is uniq (using setnx in repo)
+        return cachedFindIdByCubaUserSessionId.apply(cubaUserSessionId);
+
+        // var redisSharedUserSessionId = cubaSessionIdOnSharedUserSessionIdCache.computeIfAbsent(cubaUserSessionId,
+        //        logSessionIdCacheMiss(findIdByCubaUserSessionId));
+
+        // return redisSharedUserSessionId;
     }
 
     @Override
@@ -91,11 +106,12 @@ public class RedisSharedUserSessionRepositoryCached
         var sharedUserSession = redisSharedUserSessionRepositoryImpl.createByCubaUserSession(cubaUserSession);
 
         // local cache for mapping
-        cubaSessionIdOnSharedUserSessionIdCache.put(cubaUserSession.getId(), sharedUserSession);
+        // todo avoid local cache during the moment when we guarantee that sessionId is uniq (using setnx in repo)
+        // cubaSessionIdOnSharedUserSessionIdCache.put(cubaUserSession.getId(), sharedUserSession);
 
         // redis cache for mapping
         redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository
-                .createCubaUserSessionIdOnSharedUserSessionIdMapping(cubaUserSession.getId(), sharedUserSession);
+                .createSessionIdMapping(cubaUserSession.getId(), sharedUserSession);
 
         return sharedUserSession;
     }

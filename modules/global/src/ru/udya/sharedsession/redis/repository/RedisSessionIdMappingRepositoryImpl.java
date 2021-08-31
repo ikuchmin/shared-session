@@ -4,11 +4,13 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.async.RedisAsyncCommands;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.exception.SharedSessionException;
 import ru.udya.sharedsession.exception.SharedSessionReadingException;
 import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
-import ru.udya.sharedsession.redis.codec.RedisSharedUserSessionIdCodec;
+import ru.udya.sharedsession.redis.codec.RedisSessionIdMappingCodec;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 
 import javax.annotation.PostConstruct;
@@ -16,27 +18,30 @@ import javax.annotation.PreDestroy;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-@Component(RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl.NAME)
-public class RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl
-        implements RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepository {
 
-    public static final String NAME = "ss_RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl";
+@Component(RedisSessionIdMappingRepositoryImpl.NAME)
+public class RedisSessionIdMappingRepositoryImpl
+        implements RedisSessionIdMappingRepository {
+
+    public static final String NAME = "ss_RedisSessionIdMappingRepositoryImpl";
+
+    protected static final Logger log = LoggerFactory.getLogger(RedisSessionIdMappingRepositoryImpl.class);
 
     protected RedisClient redisClient;
-    protected RedisSharedUserSessionIdCodec sharedUserSessionIdCodec;
-    protected RedisAsyncCommands<UUID, RedisSharedUserSessionId> asyncCommands;
+    protected RedisSessionIdMappingCodec redisSessionIdMappingCodec;
+    protected RedisAsyncCommands<String, RedisSharedUserSessionId> asyncCommands;
 
-    public RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl(
-            RedisClient redisClient, RedisSharedUserSessionIdCodec sharedUserSessionIdCodec) {
+    public RedisSessionIdMappingRepositoryImpl(
+            RedisClient redisClient, RedisSessionIdMappingCodec redisSessionIdMappingCodec) {
 
         this.redisClient = redisClient;
-        this.sharedUserSessionIdCodec = sharedUserSessionIdCodec;
+        this.redisSessionIdMappingCodec = redisSessionIdMappingCodec;
     }
 
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-        this.asyncCommands = redisClient.connect(sharedUserSessionIdCodec).async();
+        this.asyncCommands = redisClient.connect(redisSessionIdMappingCodec).async();
     }
 
     @PreDestroy
@@ -45,11 +50,13 @@ public class RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl
     }
 
     @Override
-    public RedisSharedUserSessionId findRedisSharedUserSessionIdByCubaUserSessionId(UUID cubaUserSessionId) {
+    public RedisSharedUserSessionId findSharedIdByCubaSessionId(UUID cubaUserSessionId) {
+
+        var fullKeyToFind = createSessionIdMappingKey(cubaUserSessionId);
 
         try {
 
-            return asyncCommands.get(cubaUserSessionId).get();
+            return asyncCommands.get(fullKeyToFind).get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -64,10 +71,13 @@ public class RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl
     }
 
     @Override
-    public void createCubaUserSessionIdOnSharedUserSessionIdMapping(UUID cubaUserSessionId, RedisSharedUserSessionId redisSharedUserSessionId) {
+    public void createSessionIdMapping(UUID cubaUserSessionId, RedisSharedUserSessionId redisSharedUserSessionId) {
+
+        var fullKeyToFind = createSessionIdMappingKey(cubaUserSessionId);
+
         try {
 
-            asyncCommands.set(cubaUserSessionId, redisSharedUserSessionId).get();
+            asyncCommands.set(fullKeyToFind, redisSharedUserSessionId).get();
 
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
@@ -79,5 +89,9 @@ public class RedisCubaUserSessionIdOnSharedUserSessionIdMappingRepositoryImpl
         } catch (ExecutionException e) {
             throw new SharedSessionReadingException("Exception during saving mapping between cuba user session id and shared user session id", e);
         }
+    }
+
+    protected String createSessionIdMappingKey(UUID cubaUserSessionId) {
+        return String.format(KEY_PATTERN, cubaUserSessionId);
     }
 }

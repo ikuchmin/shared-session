@@ -2,27 +2,28 @@ package ru.udya.sharedsession.redis.codec;
 
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 
 import java.nio.ByteBuffer;
-import java.util.UUID;
 
 @Component("ss_RedisSharedUserSessionIdCodec")
-public class RedisSharedUserSessionIdCodec implements RedisCodec<UUID, RedisSharedUserSessionId> {
+public class RedisSessionIdMappingCodec implements RedisCodec<String, RedisSharedUserSessionId> {
+
+    protected static final Logger log = LoggerFactory.getLogger(RedisSessionIdMappingCodec.class);
 
     protected RedisSharedUserSessionIdTool redisSharedUserSessionIdTool;
 
-    public RedisSharedUserSessionIdCodec(RedisSharedUserSessionIdTool redisSharedUserSessionIdTool) {
+    public RedisSessionIdMappingCodec(RedisSharedUserSessionIdTool redisSharedUserSessionIdTool) {
         this.redisSharedUserSessionIdTool = redisSharedUserSessionIdTool;
     }
 
     @Override
-    public UUID decodeKey(ByteBuffer buf) {
-        long firstLong = buf.getLong();
-        long secondLong = buf.getLong();
-        return new UUID(firstLong, secondLong);
+    public String decodeKey(ByteBuffer buf) {
+        return StringCodec.UTF8.decodeKey(buf);
     }
 
     @Override
@@ -32,11 +33,8 @@ public class RedisSharedUserSessionIdCodec implements RedisCodec<UUID, RedisShar
     }
 
     @Override
-    public ByteBuffer encodeKey(UUID key) {
-        ByteBuffer buf = ByteBuffer.wrap(new byte[16]);
-        buf.putLong(key.getMostSignificantBits());
-        buf.putLong(key.getLeastSignificantBits());
-        return buf;
+    public ByteBuffer encodeKey(String key) {
+        return StringCodec.UTF8.encodeKey(key);
     }
 
     @Override

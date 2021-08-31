@@ -15,7 +15,7 @@ public interface RedisConfig extends Config {
     String getRedisUri();
 
     @Property("ss.redis.host")
-    @DefaultString("localhost")
+    @DefaultString("redis")
     String getRedisHost();
 
     @Property("ss.redis.port")
@@ -29,8 +29,4 @@ public interface RedisConfig extends Config {
     @Property("ss.redis.timeout")
     @DefaultInteger(10000)
     Integer getRedisTimeout();
-
-    @Property("ss.redis.advanced.keypattern")
-    @DefaultString("shared:session:%s")
-    String getRedisKeyPattern();
 }
