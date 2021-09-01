@@ -7,7 +7,7 @@ import com.haulmont.cuba.core.entity.contracts.Ids;
 import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.View;
 import com.haulmont.cuba.security.entity.User;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.udya.querydsl.cuba.core.CubaQueryFactory;
 import ru.udya.sharedsession.entity.SharedUserPermissionStorageItem;
 import ru.udya.sharedsession.helper.NativeQueryHelper;
@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@Component(SharedUserPermissionStorageItemRepositoryService.NAME)
+@Service(SharedUserPermissionStorageItemRepositoryService.NAME)
 public class SharedUserPermissionStorageItemRepositoryServiceBean
         implements SharedUserPermissionStorageItemRepositoryService {
 

@@ -1,6 +1,9 @@
 package ru.udya.sharedsession.permission.domain;
 
-public class SharedUserEntityPermission implements SharedUserPermission {
+import java.io.Serializable;
+
+public class SharedUserEntityPermission implements SharedUserPermission, Serializable {
+    private static final long serialVersionUID = -8020824545535323440L;
 
     protected String entityType;
 
