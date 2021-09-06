@@ -71,8 +71,8 @@ public class Resp3BasedSharedUserSessionCache implements RedisSharedUserSessionC
 
     @Override
     public void saveInCache(RedisSharedUserSession redisSharedUserSession) {
-//        cache.put(RedisSharedUserSessionId.of(redisSharedUserSession), redisSharedUserSession);
-        throw new UnsupportedOperationException("Not implemented");
+        var commonKey = redisSharedUserSessionIdTool.createSharedUserSessionRedisCommonKey(redisSharedUserSession);
+        cache.put(commonKey, redisSharedUserSession.getCubaUserSession());
     }
 
     @Override
