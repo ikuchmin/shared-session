@@ -113,6 +113,8 @@ public class RedisSharedUserSessionRepositoryCached
         redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository
                 .createSessionIdMapping(cubaUserSession.getId(), sharedUserSession);
 
+        redisSharedUserSessionCache.saveInCache(sharedUserSession);
+
         return sharedUserSession;
     }
 
