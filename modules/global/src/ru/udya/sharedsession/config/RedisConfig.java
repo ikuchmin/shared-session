@@ -27,6 +27,6 @@ public interface RedisConfig extends Config {
     String getRedisPassword();
 
     @Property("ss.redis.timeout")
-    @DefaultInteger(10000)
+    @DefaultInteger(300)
     Integer getRedisTimeout();
 }
