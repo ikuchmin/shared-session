@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.udya.sharedsession.config.RedisConfig;
 
+import java.time.Duration;
+
 @Configuration
 public class SharedUserSessionConfiguration {
 
@@ -24,8 +26,11 @@ public class SharedUserSessionConfiguration {
         ClientOptions resp3 = ClientOptions.builder()
                 .protocolVersion(ProtocolVersion.RESP3).build();
 
-        RedisClient redisClient = RedisClient.create(clientResources,
-                RedisURI.create(redisConfig.getRedisHost(), redisConfig.getRedisPort()));
+        var redisUri= new RedisURI(redisConfig.getRedisHost(),
+                redisConfig.getRedisPort(),
+                Duration.ofMillis(redisConfig.getRedisTimeout()));
+
+        RedisClient redisClient = RedisClient.create(clientResources, redisUri);
 
         redisClient.setOptions(resp3);
 
