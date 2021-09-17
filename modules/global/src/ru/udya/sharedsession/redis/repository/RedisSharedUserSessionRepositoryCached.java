@@ -71,7 +71,7 @@ public class RedisSharedUserSessionRepositoryCached
                 // check that mapping in redis isn't corrupted
                 if (sharedUserSessionId.getSharedId().endsWith(cubaId.toString())) {
 
-                    log.info("Redis cache hit for CUBA session ID ({}) -> {}",
+                    log.debug("Redis cache hit for CUBA session ID ({}) -> {}",
                             cubaUserSessionId, sharedUserSessionId.getSharedId());
 
                     return sharedUserSessionId;
