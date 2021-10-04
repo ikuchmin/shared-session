@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans">
-    <bean id="tokenStore" class="ru.udya.sharedsession.portal.redis.token.RedisSharedTokenStore">
+
+    <bean id="tokenStore" class="ru.udya.sharedsession.portal.redis.token.RedisSharedTokenStore"/>
+    <bean id="ss_SessionManagerFilter" class="ru.udya.sharedsession.portal.redis.token.filter.SessionManagerFilter"/>
+
+    <bean id="ss_AnonymousAuthenticationFilter"
+          class="com.haulmont.addon.restapi.api.auth.CubaAnonymousAuthenticationFilter"/>
+
+    <bean id="cuba_AnonymousAuthenticationFilter" class="org.springframework.web.filter.CompositeFilter">
+        <property name="filters">
+            <list>
+                <ref bean="ss_AnonymousAuthenticationFilter"/>
+                <ref bean="ss_SessionManagerFilter"/>
+            </list>
+        </property>
     </bean>
 </beans>

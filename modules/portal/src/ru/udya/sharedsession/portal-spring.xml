@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:task="http://www.springframework.org/schema/task">
+       xmlns:context="http://www.springframework.org/schema/context">
 
     <context:component-scan base-package="ru.udya.sharedsession">
         <context:exclude-filter type="regex" expression="ru\.udya\.sharedsession\.portal\..*"/>
@@ -17,5 +16,4 @@
             </map>
         </property>
     </bean>
-
 </beans>

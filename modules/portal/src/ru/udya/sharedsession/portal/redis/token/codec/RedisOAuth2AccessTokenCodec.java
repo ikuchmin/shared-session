@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 
-@Component("ss_RedisOAuth2AccessTokenCodec")
 public class RedisOAuth2AccessTokenCodec implements RedisCodec<String, OAuth2AccessToken> {
 
     @Override

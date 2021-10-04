@@ -26,13 +26,14 @@ class RedisSharedUserSessionRepositoryCachedTest extends SharedSessionIntegratio
 
         //noinspection GroovyAssignabilityCheck
         redisSharedUserSessionRepositoryImpl = Spy(RedisSharedUserSessionRepositoryImpl,
-                                                   constructorArgs: [AppBeans.get(RedisClient),
-                                                                     AppBeans.get(RedisUserSessionCodec),
-                                                                     AppBeans.get(RedisSharedUserSessionIdTool)])
+                constructorArgs: [AppBeans.get(RedisClient),
+                                  AppBeans.get(RedisUserSessionCodec),
+                                  AppBeans.get(RedisSharedUserSessionIdTool)])
         redisSharedUserSessionRepositoryImpl.init()
 
-        RedisSessionIdMappingRepositoryImpl idMappingRepository = AppBeans.get(RedisSessionIdMappingRepositoryImpl)
-        testClass = new RedisSharedUserSessionRepositoryCached(AppBeans.get(RedisSharedUserSessionIdTool), redisSharedUserSessionRepositoryImpl, idMappingRepository)
+        redisSharedUserSessionCache = AppBeans.get(RedisSharedUserSessionCache)
+
+        testClass = new RedisSharedUserSessionRepositoryCached(redisSharedUserSessionCache, redisSharedUserSessionRepositoryImpl, redisCubaUserSessionIdOnSharedUserSessionIdMappingRepository)
     }
 
     def "check that findById doesn't produce query to Redis every time"() {

@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 
 import static org.apache.commons.lang3.SerializationUtils.serialize;
 
-@Component("ss_RedisOAuth2RefreshTokenCodec")
 public class RedisOAuth2RefreshTokenCodec implements RedisCodec<String, OAuth2RefreshToken> {
 
     @Override
