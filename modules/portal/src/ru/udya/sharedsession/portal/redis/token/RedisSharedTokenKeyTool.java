@@ -20,11 +20,6 @@ public class RedisSharedTokenKeyTool {
 
     private final AuthenticationKeyGenerator authenticationKeyGenerator = new DefaultAuthenticationKeyGenerator();
 
-    public String createAuthKey(OAuth2Authentication authentication) {
-        String key = authenticationKeyGenerator.extractKey(authentication);
-        return String.format(AUTH, key);
-    }
-
     public String createAuthKey(OAuth2AccessToken tokenValue) {
         return createAuthKey(tokenValue.getValue());
     }
