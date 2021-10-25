@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans">
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:oauth2="http://www.springframework.org/schema/security/oauth2">
 
+    <context:component-scan base-package="ru.udya.sharedsession.portal"/>
+
+    <!--suppress SpringBeanConstructorArgInspection -->
     <bean id="tokenStore" class="ru.udya.sharedsession.portal.redis.token.RedisSharedTokenStore"/>
-    <bean id="ss_SessionManagerFilter" class="ru.udya.sharedsession.portal.redis.token.filter.SessionManagerFilter"/>
 
-    <bean id="ss_AnonymousAuthenticationFilter"
-          class="com.haulmont.addon.restapi.api.auth.CubaAnonymousAuthenticationFilter"/>
+    <oauth2:resource-server id="resourceServer" token-services-ref="tokenServices"/>
 
-    <bean id="cuba_AnonymousAuthenticationFilter" class="org.springframework.web.filter.CompositeFilter">
+    <bean id="resourceFilter" class="org.springframework.web.filter.CompositeFilter">
         <property name="filters">
             <list>
-                <ref bean="ss_AnonymousAuthenticationFilter"/>
-                <ref bean="ss_SessionManagerFilter"/>
+                <ref bean="resourceServer"/>
+                <ref bean="ss_CubaMiddlewareSessionRecoverFilter"/>
             </list>
         </property>
     </bean>

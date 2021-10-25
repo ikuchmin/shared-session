@@ -15,7 +15,6 @@ import ru.udya.sharedsession.portal.redis.token.codec.RedisOAuth2RefreshTokenCod
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
@@ -31,7 +30,6 @@ public class RedisSharedTokenStore implements TokenStore {
 
     private final RedisSharedTokenKeyTool keyHelper = new RedisSharedTokenKeyTool();
 
-    @Inject
     public RedisSharedTokenStore(RedisClient redisClient) {
         this.redisClient = redisClient;
     }
