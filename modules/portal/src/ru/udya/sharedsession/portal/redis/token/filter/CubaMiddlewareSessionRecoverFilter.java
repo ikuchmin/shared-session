@@ -19,22 +19,31 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.annotation.Nullable;
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.ACCEPT_LANGUAGE;
 import static org.springframework.util.CollectionUtils.isEmpty;
 
-public class SessionManagerFilter extends GenericFilterBean {
+@Component("ss_CubaMiddlewareSessionRecoverFilter")
+public class CubaMiddlewareSessionRecoverFilter extends GenericFilterBean {
 
-    private static final Logger log = LoggerFactory.getLogger(SessionManagerFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(CubaMiddlewareSessionRecoverFilter.class);
 
     protected RestApiConfig restApiConfig;
 
@@ -44,7 +53,8 @@ public class SessionManagerFilter extends GenericFilterBean {
 
     protected GlobalConfig globalConfig;
 
-    public SessionManagerFilter(RestApiConfig restApiConfig, TrustedClientService trustedClientService, AuthenticationService authenticationService, GlobalConfig globalConfig) {
+    public CubaMiddlewareSessionRecoverFilter(RestApiConfig restApiConfig,
+                                              TrustedClientService trustedClientService, AuthenticationService authenticationService, GlobalConfig globalConfig) {
         this.restApiConfig = restApiConfig;
         this.trustedClientService = trustedClientService;
         this.authenticationService = authenticationService;

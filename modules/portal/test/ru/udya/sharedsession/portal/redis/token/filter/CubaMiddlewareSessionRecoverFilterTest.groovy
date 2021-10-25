@@ -23,12 +23,12 @@ import javax.servlet.ServletRequest
 import javax.servlet.ServletResponse
 import javax.servlet.http.HttpServletRequest
 
-class SessionManagerFilterTest extends Specification {
+class CubaMiddlewareSessionRecoverFilterTest extends Specification {
 
     private static final String EXISTING_SESSION_ID = UUID.randomUUID().toString()
     private static final String EXISTING_LOGIN = "login"
 
-    SessionManagerFilter testClass
+    CubaMiddlewareSessionRecoverFilter testClass
     Optional<OAuth2Authentication> authenticationOptional = Optional.empty()
 
     def "check that the next filter will be call"() {
@@ -39,7 +39,7 @@ class SessionManagerFilterTest extends Specification {
             }
         }
 
-        testClass = new SessionManagerFilter(Stub(RestApiConfig), Stub(TrustedClientService), Stub(AuthenticationService), Stub(GlobalConfig))
+        testClass = new CubaMiddlewareSessionRecoverFilter(Stub(RestApiConfig), Stub(TrustedClientService), Stub(AuthenticationService), Stub(GlobalConfig))
 
         when:
         testClass.doFilter(null, null, chain)
@@ -55,7 +55,7 @@ class SessionManagerFilterTest extends Specification {
 
         def trustedClientService = createTrustedClientServiceStub(createUserSessionStub())
 
-        testClass = new SessionManagerFilter(Stub(RestApiConfig), trustedClientService, Stub(AuthenticationService), Stub(GlobalConfig)) {
+        testClass = new CubaMiddlewareSessionRecoverFilter(Stub(RestApiConfig), trustedClientService, Stub(AuthenticationService), Stub(GlobalConfig)) {
             @Override
             protected Optional<Authentication> getAuthentication() {
                 return authenticationOptional
@@ -106,7 +106,7 @@ class SessionManagerFilterTest extends Specification {
         }
 
         def authenticationService = createAuthenticationServiceStub(userSessionStub)
-        testClass = new SessionManagerFilter(restApiConfig, trustedClientService, authenticationService, Stub(GlobalConfig)) {
+        testClass = new CubaMiddlewareSessionRecoverFilter(restApiConfig, trustedClientService, authenticationService, Stub(GlobalConfig)) {
             @Override
             protected Optional<OAuth2Authentication> getAuthentication() {
                 return authenticationOptional
@@ -177,7 +177,7 @@ class SessionManagerFilterTest extends Specification {
             getHeader(_) >> "header"
             getLocale() >> initialLocale
         }
-        testClass = new SessionManagerFilter(restApiConfig, trustedClientService, authenticationService, globalConfig) {
+        testClass = new CubaMiddlewareSessionRecoverFilter(restApiConfig, trustedClientService, authenticationService, globalConfig) {
             @Override
             protected Optional<Authentication> getAuthentication() {
                 return authenticationOptional
@@ -232,7 +232,7 @@ class SessionManagerFilterTest extends Specification {
             getWebContextName() >> "testContextName"
         }
         when:
-        testClass = new SessionManagerFilter(restApiConfig, Stub(TrustedClientService), Stub(AuthenticationService), globalConfig) {
+        testClass = new CubaMiddlewareSessionRecoverFilter(restApiConfig, Stub(TrustedClientService), Stub(AuthenticationService), globalConfig) {
             @Override
             protected HttpServletRequest getServletRequestAttributes() {
                 return httpServletRequestStub
@@ -250,7 +250,7 @@ class SessionManagerFilterTest extends Specification {
         trustedClientCredentials.clientInfo == "REST API (testHostName:testPort/testContextName) header"
 
         when:
-        testClass = new SessionManagerFilter(restApiConfig, Stub(TrustedClientService), Stub(AuthenticationService), Stub(GlobalConfig)) {
+        testClass = new CubaMiddlewareSessionRecoverFilter(restApiConfig, Stub(TrustedClientService), Stub(AuthenticationService), Stub(GlobalConfig)) {
             @Override
             protected HttpServletRequest getServletRequestAttributes() {
                 return null
