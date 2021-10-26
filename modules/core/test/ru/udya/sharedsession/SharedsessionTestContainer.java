@@ -24,6 +24,7 @@ public class SharedsessionTestContainer extends TestContainer {
                 // List the files defined in your web.xml
                 // in appPropertiesConfig context parameter of the core module
                 "ru/udya/sharedsession/app.properties",
+                "ru/udya/sharedsession/test-app.properties",
                 // Add this file which is located in CUBA and defines some properties
                 // specifically for test environment. You can replace it with your own
                 // or add another one in the end.

@@ -73,6 +73,7 @@ public class RedisSharedUserSessionRepositoryCached
 
                     log.debug("Redis cache hit for CUBA session ID ({}) -> {}",
                             cubaUserSessionId, sharedUserSessionId.getSharedId());
+                    redisSharedUserSessionRepositoryImpl.updateExpirationTime(sharedUserSessionId);
 
                     return sharedUserSessionId;
                 }

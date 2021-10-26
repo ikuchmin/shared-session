@@ -1,6 +1,7 @@
 package ru.udya.sharedsession.redis.repository;
 
 import com.haulmont.cuba.core.entity.contracts.Id;
+import com.haulmont.cuba.core.global.GlobalConfig;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.security.global.UserSession;
 import io.lettuce.core.KeyScanCursor;
@@ -20,6 +21,8 @@ import ru.udya.sharedsession.exception.SharedSessionTimeoutException;
 import ru.udya.sharedsession.redis.codec.RedisUserSessionCodec;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSession;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
+import ru.udya.sharedsession.redis.permission.repository.RedisSharedUserSessionPermissionRepositoryImpl;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdExpirationTool;
 import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 
 import javax.annotation.Nullable;
@@ -43,16 +46,25 @@ public class RedisSharedUserSessionRepositoryImpl
     protected RedisClient redisClient;
     protected RedisUserSessionCodec redisUserSessionCodec;
     protected RedisSharedUserSessionIdTool redisRepositoryTool;
+    protected RedisSharedUserSessionIdExpirationTool expirationTool;
+    protected GlobalConfig globalConfig;
+    protected RedisSharedUserSessionPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl;
 
     protected StatefulRedisConnection<String, UserSession> redisConnection;
     protected RedisAsyncCommands<String, UserSession> asyncRedisCommands;
 
     public RedisSharedUserSessionRepositoryImpl(RedisClient redisClient,
                                                 RedisUserSessionCodec redisUserSessionCodec,
-                                                RedisSharedUserSessionIdTool redisRepositoryTool) {
+                                                RedisSharedUserSessionIdTool redisRepositoryTool,
+                                                RedisSharedUserSessionIdExpirationTool expirationTool,
+                                                RedisSharedUserSessionPermissionRepositoryImpl redisSharedUserPermissionRepositoryImpl,
+                                                GlobalConfig globalConfig) {
         this.redisClient = redisClient;
         this.redisUserSessionCodec = redisUserSessionCodec;
         this.redisRepositoryTool = redisRepositoryTool;
+        this.expirationTool = expirationTool;
+        this.redisSharedUserPermissionRepositoryImpl = redisSharedUserPermissionRepositoryImpl;
+        this.globalConfig = globalConfig;
     }
 
     @PostConstruct
@@ -79,6 +91,7 @@ public class RedisSharedUserSessionRepositoryImpl
             var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSessionId);
 
             var userSession = asyncRedisCommands.get(redisKey).get();
+            updateKeyExpirationTime(redisKey);
 
             return RedisSharedUserSession.of(sharedUserSessionId, userSession);
 
@@ -99,7 +112,7 @@ public class RedisSharedUserSessionRepositoryImpl
     public RedisSharedUserSessionId findIdByCubaUserSessionId(UUID cubaUserSessionId) {
         try {
 
-            var matcher = matches(KEY_PREFIX + ":*:" + cubaUserSessionId + ":" + COMMON_SUFFIX);
+            var matcher = matches(redisRepositoryTool.createSharedUserSessionRedisCommonMatcherByCubaUserSession(cubaUserSessionId));
 
 
             KeyScanCursor<String> cursor = asyncRedisCommands.scan(matcher).get();
@@ -117,6 +130,7 @@ public class RedisSharedUserSessionRepositoryImpl
                 return null;
             }
 
+            updateKeysExpirationTime(foundKeys);
             var foundKeyWithoutSuffix = redisRepositoryTool.subtractCommonSuffix(foundKeys.get(0));
 
             return RedisSharedUserSessionId.of(foundKeyWithoutSuffix);
@@ -133,14 +147,21 @@ public class RedisSharedUserSessionRepositoryImpl
         }
     }
 
+    private void updateKeysExpirationTime(List<String> redisKeys) throws ExecutionException, InterruptedException {
+        for (String key : redisKeys) {
+            updateKeyExpirationTime(key);
+        }
+    }
+
     @Override
     public List<RedisSharedUserSessionId> findAllIdsByUser(Id<User, UUID> userId) {
 
         try {
 
-            var matcher = KEY_PREFIX + ":" + userId.getValue() + ":*:" + COMMON_SUFFIX;
+            String matcher = redisRepositoryTool.createSharedUserSessionRedisCommonMatcher(userId);
 
             var foundKeys = asyncRedisCommands.keys(matcher).get();
+            updateKeysExpirationTime(foundKeys);
 
             return foundKeys.stream()
                             .map(redisRepositoryTool::subtractCommonSuffix)
@@ -177,7 +198,7 @@ public class RedisSharedUserSessionRepositoryImpl
         try {
 
             asyncRedisCommands.set(redisKey, sharedUserSession.getCubaUserSession()).get();
-
+            updateKeyExpirationTime(redisKey);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
@@ -190,6 +211,9 @@ public class RedisSharedUserSessionRepositoryImpl
         }
     }
 
+    private void updateKeyExpirationTime(String commonKey) throws ExecutionException, InterruptedException {
+        expirationTool.updateCommonKeyExpirationTime(asyncRedisCommands, commonKey);
+    }
 
     @Override
     public RedisSharedUserSession updateByFn(RedisSharedUserSessionId redisSharedUserSessionId,
@@ -218,6 +242,8 @@ public class RedisSharedUserSessionRepositoryImpl
             sync.multi();
             sync.set(redisKey, sessionFromRedis);
 
+            expirationTool.updateCommonKeyExpirationTime(sync, redisKey);
+
             TransactionResult transactionResult = sync.exec();
             if (transactionResult.wasDiscarded()) {
 
@@ -226,6 +252,22 @@ public class RedisSharedUserSessionRepositoryImpl
             }
 
             return updateSharedUserSession;
+        } catch (RedisCommandTimeoutException e) {
+            throw new SharedSessionTimeoutException(e);
+        } catch (RedisException e) {
+            throw new SharedSessionException(e);
+        }
+    }
+
+    public void updateExpirationTime(RedisSharedUserSessionId sharedUserSessionId) {
+        try {
+            var redisKey = redisRepositoryTool.createSharedUserSessionRedisCommonKey(sharedUserSessionId);
+            updateKeyExpirationTime(redisKey);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SharedSessionReadingException("Thread is interrupted by external process during getting user session", e);
+        } catch (ExecutionException e) {
+            throw new SharedSessionReadingException("Exception during getting user session", e);
         } catch (RedisCommandTimeoutException e) {
             throw new SharedSessionTimeoutException(e);
         } catch (RedisException e) {
