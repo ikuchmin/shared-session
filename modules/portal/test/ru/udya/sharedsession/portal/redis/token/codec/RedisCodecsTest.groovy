@@ -5,10 +5,10 @@ import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken
 import org.springframework.security.oauth2.common.DefaultOAuth2RefreshToken
 import org.springframework.security.oauth2.provider.OAuth2Authentication
 import org.springframework.security.oauth2.provider.OAuth2Request
+import ru.udya.sharedsession.portal.redis.token.RedisSharedTokenStoreIntegrationTest
 import ru.udya.sharedsession.portal.redis.token.TestAuthentication
-import spock.lang.Specification
 
-class RedisCodecsTest extends Specification {
+class RedisCodecsTest extends RedisSharedTokenStoreIntegrationTest {
     RedisOAuth2AuthenticationCodec authCodec
     RedisOAuth2AccessTokenCodec accessTokenCodec
     RedisOAuth2RefreshTokenCodec refreshTokenCodec

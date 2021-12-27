@@ -1,16 +1,11 @@
 package ru.udya.sharedsession.portal.redis.token.codec;
 
+import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
-import org.apache.commons.lang3.SerializationUtils;
-import org.springframework.security.oauth2.common.DefaultExpiringOAuth2RefreshToken;
-import org.springframework.security.oauth2.common.DefaultOAuth2RefreshToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;
-import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
-
-import static org.apache.commons.lang3.SerializationUtils.serialize;
 
 public class RedisOAuth2RefreshTokenCodec implements RedisCodec<String, OAuth2RefreshToken> {
 
@@ -24,7 +19,7 @@ public class RedisOAuth2RefreshTokenCodec implements RedisCodec<String, OAuth2Re
         byte[] bytes = new byte[buf.remaining()];
         buf.get(bytes);
 
-        return SerializationUtils.deserialize(bytes);
+        return (OAuth2RefreshToken) SerializationSupport.deserialize(bytes);
     }
 
     @Override
@@ -34,13 +29,6 @@ public class RedisOAuth2RefreshTokenCodec implements RedisCodec<String, OAuth2Re
 
     @Override
     public ByteBuffer encodeValue(OAuth2RefreshToken value) {
-        byte[] serialize = null;
-        if (value instanceof DefaultExpiringOAuth2RefreshToken) {
-            serialize = serialize((DefaultExpiringOAuth2RefreshToken) value);
-        }
-        if (value instanceof DefaultOAuth2RefreshToken) {
-            serialize = serialize((DefaultOAuth2RefreshToken) value);
-        }
-        return serialize == null ? null : ByteBuffer.wrap(serialize);
+        return ByteBuffer.wrap(SerializationSupport.serialize(value));
     }
 }

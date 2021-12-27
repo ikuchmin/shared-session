@@ -1,10 +1,9 @@
 package ru.udya.sharedsession.portal.redis.token.codec;
 
+import com.haulmont.cuba.core.sys.serialization.SerializationSupport;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
-import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 
@@ -20,7 +19,7 @@ public class RedisOAuth2AuthenticationCodec implements RedisCodec<String, OAuth2
         byte[] bytes = new byte[buf.remaining()];
         buf.get(bytes);
 
-        return SerializationUtils.deserialize(bytes);
+        return (OAuth2Authentication) SerializationSupport.deserialize(bytes);
     }
 
     @Override
@@ -30,6 +29,6 @@ public class RedisOAuth2AuthenticationCodec implements RedisCodec<String, OAuth2
 
     @Override
     public ByteBuffer encodeValue(OAuth2Authentication value) {
-        return ByteBuffer.wrap(SerializationUtils.serialize(value));
+        return ByteBuffer.wrap(SerializationSupport.serialize(value));
     }
 }
