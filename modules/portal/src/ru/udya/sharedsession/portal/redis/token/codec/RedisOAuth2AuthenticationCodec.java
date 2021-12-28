@@ -2,9 +2,8 @@ package ru.udya.sharedsession.portal.redis.token.codec;
 
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
-import org.apache.commons.lang3.SerializationUtils;
+import org.springframework.security.oauth2.common.util.SerializationUtils;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 
