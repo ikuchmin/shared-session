@@ -18,6 +18,8 @@ import ru.udya.sharedsession.permission.domain.SharedUserSpecificPermission;
 import ru.udya.sharedsession.permission.helper.SharedUserPermissionStringRepresentationHelper;
 import ru.udya.sharedsession.redis.domain.RedisSharedUserSessionId;
 import ru.udya.sharedsession.redis.permission.codec.RedisSharedUserPermissionCodec;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdExpirationTool;
+import ru.udya.sharedsession.redis.tool.RedisSharedUserSessionIdTool;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -35,16 +37,21 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
     protected RedisClient redisClient;
     protected RedisSharedUserPermissionCodec userPermissionCodec;
     protected SharedUserPermissionStringRepresentationHelper stringRepresentationHelper;
+    protected RedisSharedUserSessionIdTool redisRepositoryTool;
+    protected RedisSharedUserSessionIdExpirationTool expirationTool;
 
     protected StatefulRedisConnection<String, SharedUserPermission> asyncReadConnection;
 
-
     public RedisSharedUserSessionPermissionRepositoryImpl(RedisClient redisClient,
                                                           RedisSharedUserPermissionCodec userPermissionCodec,
-                                                          SharedUserPermissionStringRepresentationHelper stringRepresentationHelper) {
+                                                          SharedUserPermissionStringRepresentationHelper stringRepresentationHelper,
+                                                          RedisSharedUserSessionIdTool redisRepositoryTool,
+                                                          RedisSharedUserSessionIdExpirationTool expirationTool) {
         this.redisClient = redisClient;
         this.userPermissionCodec = userPermissionCodec;
         this.stringRepresentationHelper = stringRepresentationHelper;
+        this.redisRepositoryTool = redisRepositoryTool;
+        this.expirationTool = expirationTool;
     }
 
     @PostConstruct
@@ -61,12 +68,14 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
     @Override
     public List<SharedUserPermission> findAllByUserSession(RedisSharedUserSessionId userSession) {
 
-        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+        var redisKey =  redisRepositoryTool.createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             var readPermissions = asyncReadConnection.async()
                                                      .smembers(redisKey)
                                                      .get();
+
+            updatePermissionsKeyExpirationTime(redisKey);
 
             return new ArrayList<>(readPermissions);
 
@@ -125,7 +134,7 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
     public <T extends SharedUserPermission> List<T> internalFindPermissionsByUserSessionAndType(
             RedisSharedUserSessionId userSession, Class<T> permissionType) {
 
-        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             String typePrefix = stringRepresentationHelper
@@ -137,11 +146,11 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
                                             .sscan(redisKey, matches)
                                             .get();
 
-
+            updatePermissionsKeyExpirationTime(redisKey);
             //noinspection unchecked
             return cursor.getValues().stream()
-                         .map(p -> (T) p)
-                         .collect(Collectors.toList());
+                    .map(p -> (T) p)
+                    .collect(Collectors.toList());
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -159,9 +168,11 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
     @Override
     public boolean doesHavePermission(RedisSharedUserSessionId userSession, SharedUserPermission permission) {
 
-        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
+            updatePermissionsKeyExpirationTime(redisKey);
+
             return asyncReadConnection.async()
                                       .sismember(redisKey, permission)
                                       .get();
@@ -176,6 +187,10 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
         } catch (RedisException e) {
             throw new SharedSessionException(e);
         }
+    }
+
+    private void updatePermissionsKeyExpirationTime(String redisKey) throws ExecutionException, InterruptedException {
+        expirationTool.updatePermissionsKeyExpirationTime(asyncReadConnection.async(), redisKey);
     }
 
     @Override
@@ -223,7 +238,7 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
             return;
         }
 
-        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
@@ -231,6 +246,8 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
             asyncReadConnection.async()
                                .sadd(redisKey, permissionsArray)
                                .get();
+
+            updatePermissionsKeyExpirationTime(redisKey);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -260,7 +277,7 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
             return;
         }
 
-        var redisKey = createSharedUserSessionRedisPermissionKey(userSession);
+        var redisKey = redisRepositoryTool.createSharedUserSessionRedisPermissionKey(userSession);
 
         try {
             var permissionsArray = permissions.toArray(new SharedUserPermission[0]);
@@ -280,9 +297,5 @@ public class RedisSharedUserSessionPermissionRepositoryImpl implements RedisShar
             throw new SharedSessionException(e);
         }
 
-    }
-
-    protected String createSharedUserSessionRedisPermissionKey(RedisSharedUserSessionId sharedUserSession) {
-        return sharedUserSession.getSharedId() + ":" + PERMISSION_SUFFIX;
     }
 }
